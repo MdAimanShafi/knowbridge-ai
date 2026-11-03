@@ -27,24 +27,43 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchProjects = useCallback(async () => {
+    if (!token) {
+      setProjects([]);
+      setActiveProject(null);
+      setIsLoading(false);
+      return;
+    }
+
     const res = await safeFetchJson<{ projects: Project[] }>('/api/projects');
     if (res.ok && res.data?.projects) {
       setProjects(res.data.projects);
       if (!activeProject && res.data.projects.length > 0) {
-        const phx = res.data.projects.find((p) => p.code === 'PHX-MIG') || res.data.projects[0];
-        setActiveProject(phx);
+        const phoenix = res.data.projects.find((project) => project.code === 'PHX-MIG');
+        setActiveProject(phoenix || res.data.projects[0]);
       } else if (activeProject) {
-        const updatedActive = res.data.projects.find((p) => p.id === activeProject.id);
-        if (updatedActive) setActiveProject(updatedActive);
+        const updatedActive = res.data.projects.find((project) => project.id === activeProject.id);
+        setActiveProject(
+          updatedActive ||
+            res.data.projects.find((project) => project.code === 'PHX-MIG') ||
+            res.data.projects[0] ||
+            null
+        );
       }
+    } else if (res.status === 401) {
+      setProjects([]);
+      setActiveProject(null);
     }
     setIsLoading(false);
-  }, [activeProject]);
+  }, [activeProject, token]);
 
   const fetchProjectData = useCallback(async () => {
-    if (!activeProject) return;
+    if (!activeProject || !token) {
+      setDocuments([]);
+      setFindings([]);
+      return;
+    }
 
-    const [docsRes, fndsRes] = await Promise.all([
+    const [docsRes, findingsRes] = await Promise.all([
       safeFetchJson<{ documents: ProjectDocument[] }>(`/api/projects/${activeProject.id}/documents`),
       safeFetchJson<{ findings: Finding[] }>(`/api/projects/${activeProject.id}/findings`),
     ]);
@@ -52,54 +71,45 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (docsRes.ok && docsRes.data?.documents) {
       setDocuments(docsRes.data.documents);
     }
-    if (fndsRes.ok && fndsRes.data?.findings) {
-      setFindings(fndsRes.data.findings);
+    if (findingsRes.ok && findingsRes.data?.findings) {
+      setFindings(findingsRes.data.findings);
     }
-  }, [activeProject]);
+  }, [activeProject, token]);
 
   useEffect(() => {
-    fetchProjects();
+    void fetchProjects();
   }, [fetchProjects]);
 
   useEffect(() => {
-    if (activeProject) {
-      fetchProjectData();
-    }
-  }, [activeProject, fetchProjectData]);
+    void fetchProjectData();
+  }, [fetchProjectData]);
 
   const createProject = async (data: Partial<Project> & { name: string }) => {
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (token) headers.Authorization = `Bearer ${token}`;
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers,
         body: JSON.stringify(data),
       });
-      if (res.ok) {
-        const resData = await res.json();
-        await fetchProjects();
-        setActiveProject(resData.project);
-        return resData.project;
-      }
-      return null;
+      if (!res.ok) return null;
+
+      const response = await res.json();
+      await fetchProjects();
+      setActiveProject(response.project);
+      return response.project;
     } catch {
       return null;
     }
   };
 
   const resetDemoData = async () => {
-    try {
-      const headers: Record<string, string> = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      await fetch('/api/system/reset-demo', { method: 'POST', headers });
-      await fetchProjects();
-      if (activeProject) {
-        await fetchProjectData();
-      }
-    } catch (err) {
-      console.error('Failed to reset demo seed:', err);
+    const res = await safeFetchJson<{ success: boolean }>('/api/system/reset-demo', { method: 'POST' });
+    if (!res.ok || !res.data?.success) {
+      throw new Error(res.error || 'Failed to reset demo data.');
     }
+    await fetchProjects();
   };
 
   return (

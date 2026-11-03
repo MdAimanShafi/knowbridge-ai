@@ -42,7 +42,15 @@ activityRoutes.get('/stats', authMiddleware, (_req: Request, res: Response) => {
 });
 
 // Reset demo state back to pristine seed
-activityRoutes.post('/system/reset-demo', authMiddleware, (_req: Request, res: Response) => {
+activityRoutes.post('/system/reset-demo', authMiddleware, (req: Request, res: Response) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Demo data reset is unavailable in production.' });
+  }
+  const user = (req as any).user;
+  if (!['user-demo-1', 'user-sarah-2', 'user-marcus-3'].includes(user.id)) {
+    return res.status(403).json({ error: 'Only demo accounts can reset the demo workspace.' });
+  }
+
   db.resetToDefaultSeed();
   res.json({ success: true, message: 'Platform data store re-initialized to official demo seed.' });
 });

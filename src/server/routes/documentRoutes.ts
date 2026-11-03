@@ -55,7 +55,14 @@ documentRoutes.post(
       }
 
       // Parse document buffer
-      const parsed = await parseDocumentBuffer(buffer, originalName, mimeType);
+      let parsed;
+      try {
+        parsed = await parseDocumentBuffer(buffer, originalName);
+      } catch (err) {
+        return res.status(422).json({
+          error: err instanceof Error ? err.message : 'The uploaded document could not be parsed.',
+        });
+      }
 
       // Duplicate detection using SHA-256 hash
       const existingDoc = db.findDocumentByHash(projectId, parsed.contentHash);
@@ -116,16 +123,17 @@ documentRoutes.post(
         pages: parsed.pages,
       };
 
-      const extractedFindings = await analyzeDocumentsWithGemini(projectId, targetDocToAnalyze, allDocs);
+      const analysis = await analyzeDocumentsWithGemini(projectId, targetDocToAnalyze, allDocs);
+      const extractedFindings = analysis.findings;
       if (extractedFindings.length > 0) {
-        db.addFindings(extractedFindings);
+        db.replaceAiFindingsForDocument(newDoc.id, extractedFindings);
         db.logActivity({
           projectId,
           userId: user.id,
           userName: user.name,
           action: 'AI Knowledge Reconstruction',
           category: 'AI_EXTRACTION',
-          details: `Gemini extracted ${extractedFindings.length} structured findings from "${newDoc.filename}".`,
+          details: `${analysis.provider} extracted ${extractedFindings.length} structured findings from "${newDoc.filename}".`,
         });
       }
 
@@ -134,6 +142,8 @@ documentRoutes.post(
         findingsExtracted: extractedFindings.length,
         findings: extractedFindings,
         sourceRecordsCount: sourceRecords.length,
+        analysisProvider: analysis.provider,
+        analysisWarning: analysis.warning,
       });
     } catch (err: any) {
       console.error('Document upload error:', err);
@@ -165,11 +175,18 @@ documentRoutes.post('/documents/:id/process', authMiddleware, async (req: Reques
       pages: doc.pages || [{ pageNumber: 1, text: doc.extractedText || 'No text content' }],
     };
 
-    const findings = await analyzeDocumentsWithGemini(doc.projectId, targetDocToAnalyze, allDocs);
-    db.addFindings(findings);
+    const analysis = await analyzeDocumentsWithGemini(doc.projectId, targetDocToAnalyze, allDocs);
+    const findings = analysis.findings;
+    if (!db.replaceAiFindingsForDocument(doc.id, findings)) {
+      db.updateDocument(doc.id, { status: 'EXTRACTED', error: undefined });
+      return res.status(409).json({
+        error: 'This document already has reviewed AI findings. Upload a revised document to preserve the existing review history.',
+      });
+    }
     db.updateDocument(doc.id, {
       status: 'EXTRACTED',
       processedAt: new Date().toISOString(),
+      error: undefined,
     });
 
     db.logActivity({
@@ -178,10 +195,16 @@ documentRoutes.post('/documents/:id/process', authMiddleware, async (req: Reques
       userName: user.name,
       action: 'AI Knowledge Reconstruction',
       category: 'AI_EXTRACTION',
-      details: `Reconstructed ${findings.length} findings from "${doc.filename}".`,
+      details: `${analysis.provider} reconstructed ${findings.length} findings from "${doc.filename}".`,
     });
 
-    res.json({ success: true, count: findings.length, findings });
+    res.json({
+      success: true,
+      count: findings.length,
+      findings,
+      analysisProvider: analysis.provider,
+      analysisWarning: analysis.warning,
+    });
   } catch (err: any) {
     db.updateDocument(doc.id, { status: 'ERROR', error: err.message });
     res.status(500).json({ error: `Extraction pipeline error: ${err.message}` });

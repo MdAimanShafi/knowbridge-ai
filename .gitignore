@@ -6,3 +6,21 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Build files
+dist/
+build/
+
+# Logs
+*.log
+
+# Local configuration
+.DS_Store

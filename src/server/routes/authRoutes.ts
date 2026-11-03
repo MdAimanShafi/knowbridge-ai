@@ -7,23 +7,35 @@ export const authRoutes = Router();
 
 // Register new user
 authRoutes.post('/register', (req: Request, res: Response) => {
-  const { email, name, title, password, role } = req.body;
+  const { email, name, title, password } = req.body;
+  const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  const normalizedName = typeof name === 'string' ? name.trim() : '';
 
-  if (!email || !password || !name) {
+  if (!normalizedEmail || typeof password !== 'string' || !normalizedName) {
     return res.status(400).json({ error: 'Email, name, and password are required.' });
   }
 
-  const existing = db.findUserByEmail(email);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail) || normalizedEmail.length > 254) {
+    return res.status(400).json({ error: 'Provide a valid email address.' });
+  }
+  if (normalizedName.length > 100) {
+    return res.status(400).json({ error: 'Name must be 100 characters or fewer.' });
+  }
+  if (password.length < 8 || password.length > 128) {
+    return res.status(400).json({ error: 'Password must be between 8 and 128 characters.' });
+  }
+
+  const existing = db.findUserByEmail(normalizedEmail);
   if (existing) {
     return res.status(409).json({ error: 'An account with this email already exists.' });
   }
 
   const user = db.createUser({
-    email,
-    name,
-    title: title || 'Project Member',
+    email: normalizedEmail,
+    name: normalizedName,
+    title: typeof title === 'string' && title.trim() ? title.trim().slice(0, 100) : 'Project Member',
     password,
-    role: role || 'MEMBER',
+    role: 'MEMBER',
   });
 
   const token = generateToken(user);
@@ -43,12 +55,13 @@ authRoutes.post('/register', (req: Request, res: Response) => {
 // Standard Login
 authRoutes.post('/login', (req: Request, res: Response) => {
   const { email, password } = req.body;
+  const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
 
-  if (!email || !password) {
+  if (!normalizedEmail || typeof password !== 'string' || !password || password.length > 128) {
     return res.status(400).json({ error: 'Email and password are required.' });
   }
 
-  const userWithHash = db.findUserByEmail(email);
+  const userWithHash = db.findUserByEmail(normalizedEmail);
   if (!userWithHash) {
     return res.status(401).json({ error: 'Invalid email or password.' });
   }
@@ -75,9 +88,18 @@ authRoutes.post('/login', (req: Request, res: Response) => {
 
 // Demo Instant Login for Judges
 authRoutes.post('/demo-login', (req: Request, res: Response) => {
-  const targetEmail = req.body.role === 'sarah' ? 'sarah.lin@phoenix-retail.com' :
-                      req.body.role === 'marcus' ? 'marcus.vance@phoenix-retail.com' :
-                      'demo@knowbridge.ai';
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Demo sign-in is unavailable in production.' });
+  }
+
+  const demoUsers = {
+    alex: 'demo@knowbridge.ai',
+    sarah: 'sarah.lin@phoenix-retail.com',
+    marcus: 'marcus.vance@phoenix-retail.com',
+  } as const;
+  const role = req.body?.role;
+  const targetEmail =
+    role === 'sarah' ? demoUsers.sarah : role === 'marcus' ? demoUsers.marcus : demoUsers.alex;
 
   const userWithHash = db.findUserByEmail(targetEmail);
   if (!userWithHash) {

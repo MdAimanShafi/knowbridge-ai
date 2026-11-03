@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { randomUUID } from 'crypto';
 import bcrypt from 'bcryptjs';
 import {
   User,
@@ -831,34 +832,49 @@ class Database {
   }
 
   private load(): DatabaseSchema {
-    try {
-      if (fs.existsSync(DATA_FILE)) {
-        const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-        const parsed = JSON.parse(raw);
-        const fresh = getInitialData();
-        if (!parsed.sourceConnections || parsed.sourceConnections.length === 0) {
-          parsed.sourceConnections = fresh.sourceConnections;
-        }
-        if (!parsed.sourceRecords || parsed.sourceRecords.length === 0) {
-          parsed.sourceRecords = fresh.sourceRecords;
-        }
-        parsed.ragQueries = parsed.ragQueries || [];
-        this.saveDirect(parsed);
-        return parsed;
+    if (fs.existsSync(DATA_FILE)) {
+      let parsed: DatabaseSchema;
+      try {
+        parsed = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8')) as DatabaseSchema;
+      } catch (error) {
+        throw new Error(`Failed to load the persisted project store at ${DATA_FILE}.`, { cause: error });
       }
-    } catch (err) {
-      console.warn('Failed to load store, initializing fresh seed:', err);
+
+      if (!parsed || !Array.isArray(parsed.users) || !Array.isArray(parsed.projects)) {
+        throw new Error(`The persisted project store at ${DATA_FILE} is invalid; refusing to overwrite it.`);
+      }
+
+      const fresh = getInitialData();
+      if (!parsed.sourceConnections || parsed.sourceConnections.length === 0) {
+        parsed.sourceConnections = fresh.sourceConnections;
+      }
+      if (!parsed.sourceRecords || parsed.sourceRecords.length === 0) {
+        parsed.sourceRecords = fresh.sourceRecords;
+      }
+      parsed.ragQueries = parsed.ragQueries || [];
+      this.saveDirect(parsed);
+      return parsed;
     }
+
     const fresh = getInitialData();
     this.saveDirect(fresh);
     return fresh;
   }
 
   private saveDirect(dataToSave: DatabaseSchema) {
+    const temporaryFile = `${DATA_FILE}.${process.pid}.${randomUUID()}.tmp`;
     try {
-      fs.writeFileSync(DATA_FILE, JSON.stringify(dataToSave, null, 2), 'utf-8');
-    } catch (err) {
-      console.error('Failed to write store to disk:', err);
+      fs.writeFileSync(temporaryFile, JSON.stringify(dataToSave, null, 2), { encoding: 'utf-8', flag: 'wx' });
+      fs.renameSync(temporaryFile, DATA_FILE);
+    } catch (error) {
+      if (fs.existsSync(temporaryFile)) {
+        try {
+          fs.unlinkSync(temporaryFile);
+        } catch (cleanupError) {
+          console.error(`Failed to remove incomplete store file ${temporaryFile}:`, cleanupError);
+        }
+      }
+      throw new Error(`Failed to persist the project store at ${DATA_FILE}.`, { cause: error });
     }
   }
 
@@ -1035,6 +1051,12 @@ class Database {
     this.data.documents.splice(idx, 1);
     // Also remove associated findings
     this.data.findings = this.data.findings.filter((f) => f.sourceDocumentId !== id);
+    this.data.sourceRecords = this.data.sourceRecords.filter(
+      (record) =>
+        record.externalSourceId !== id &&
+        !record.externalSourceId.startsWith(`${id}#`) &&
+        !record.id.startsWith(`sr-doc-${id}-`)
+    );
     this.save();
     return true;
   }
@@ -1055,9 +1077,33 @@ class Database {
   }
 
   public addFindings(newFindings: Finding[]) {
-    this.data.findings.push(...newFindings);
+    newFindings.forEach((finding) => {
+      const existingIndex = this.data.findings.findIndex((existing) => existing.id === finding.id);
+      if (existingIndex >= 0) {
+        this.data.findings[existingIndex] = finding;
+      } else {
+        this.data.findings.push(finding);
+      }
+    });
     this.save();
     return newFindings;
+  }
+
+  public replaceAiFindingsForDocument(documentId: string, newFindings: Finding[]) {
+    const reviewedFindings = this.data.findings.filter(
+      (finding) =>
+        finding.sourceDocumentId === documentId &&
+        finding.isAiGenerated &&
+        finding.reviewStatus !== 'PENDING'
+    );
+    if (reviewedFindings.length > 0) return false;
+
+    this.data.findings = this.data.findings.filter(
+      (finding) => !(finding.sourceDocumentId === documentId && finding.isAiGenerated)
+    );
+    this.data.findings.push(...newFindings);
+    this.save();
+    return true;
   }
 
   public updateFinding(id: string, updates: Partial<Finding>) {

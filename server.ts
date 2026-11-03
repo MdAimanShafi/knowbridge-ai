@@ -1,7 +1,7 @@
+import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
 import { authRoutes } from './src/server/routes/authRoutes.ts';
 import { projectRoutes } from './src/server/routes/projectRoutes.ts';
 import { documentRoutes } from './src/server/routes/documentRoutes.ts';
@@ -11,8 +11,7 @@ import { githubRoutes } from './src/server/routes/githubRoutes.ts';
 import { activityRoutes } from './src/server/routes/activityRoutes.ts';
 import { connectorRoutes } from './src/server/routes/connectorRoutes.ts';
 import { ragRoutes } from './src/server/routes/ragRoutes.ts';
-
-dotenv.config();
+import { isGeminiConfigured } from './src/server/gemini.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,6 +28,7 @@ app.get('/api/health', (_req, res) => {
   res.json({
     status: 'HEALTHY',
     service: 'KNOWBRIDGE AI Server Engine',
+    aiProvider: isGeminiConfigured() ? 'GEMINI' : 'GROUNDED_FALLBACK',
     timestamp: new Date().toISOString(),
   });
 });

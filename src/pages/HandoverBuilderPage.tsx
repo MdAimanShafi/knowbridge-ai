@@ -38,6 +38,7 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
   const [signOffNotes, setSignOffNotes] = useState('');
   const [isSigningOff, setIsSigningOff] = useState(false);
   const [signOffSuccess, setSignOffSuccess] = useState(false);
+  const [reportError, setReportError] = useState('');
 
   useEffect(() => {
     async function loadReports() {
@@ -47,9 +48,10 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
       );
       if (res.ok && res.data?.reports) {
         setReports(res.data.reports);
-        if (res.data.reports.length > 0) {
-          setActiveReport(res.data.reports[res.data.reports.length - 1]);
-        }
+        setActiveReport(res.data.reports[res.data.reports.length - 1] || null);
+      } else {
+        setReports([]);
+        setActiveReport(null);
       }
     }
     loadReports();
@@ -58,6 +60,7 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
   const handleGenerateReport = async () => {
     if (!activeProject) return;
     setIsGenerating(true);
+    setReportError('');
     try {
       const res = await safeFetchJson<{ report: HandoverReport }>(
         `/api/projects/${activeProject.id}/handover`,
@@ -73,8 +76,14 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
       if (res.ok && res.data?.report) {
         setActiveReport(res.data.report);
         setReports((prev) => [...prev, res.data!.report]);
-        syncHandoverReportToFirestore(activeProject.id, res.data.report).catch(() => {});
+        syncHandoverReportToFirestore(activeProject.id, res.data.report).catch((error) =>
+          console.warn('Handover report Firestore sync failed:', error)
+        );
+      } else {
+        setReportError(res.error || 'Could not generate the handover report.');
       }
+    } catch (error) {
+      setReportError(error instanceof Error ? error.message : 'Could not generate the handover report.');
     } finally {
       setIsGenerating(false);
     }
@@ -83,6 +92,7 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
   const handleExecutiveSignOff = async () => {
     if (!activeReport) return;
     setIsSigningOff(true);
+    setReportError('');
     try {
       const res = await safeFetchJson<{ report: HandoverReport }>(
         `/api/handover/${activeReport.id}/signoff`,
@@ -97,17 +107,62 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
         setActiveReport(res.data.report);
         setSignOffSuccess(true);
         if (activeProject) {
-          syncHandoverReportToFirestore(activeProject.id, res.data.report).catch(() => {});
+          syncHandoverReportToFirestore(activeProject.id, res.data.report).catch((error) =>
+            console.warn('Signed-off handover report Firestore sync failed:', error)
+          );
         }
         setTimeout(() => setSignOffSuccess(false), 3000);
+      } else {
+        setReportError(res.error || 'Could not record executive sign-off.');
       }
+    } catch (error) {
+      setReportError(error instanceof Error ? error.message : 'Could not record executive sign-off.');
     } finally {
       setIsSigningOff(false);
     }
   };
 
+  const handleReportExport = async (download: boolean) => {
+    if (!activeReport) return;
+    setReportError('');
+    const printWindow = download ? null : window.open('about:blank', '_blank');
+    if (!download && !printWindow) {
+      setReportError('Allow pop-ups to open the print-ready report.');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/handover/${activeReport.id}/pdf${download ? '?download=1' : ''}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error || 'Could not export the handover report.');
+      }
+
+      const url = URL.createObjectURL(await response.blob());
+      if (download) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `KNOWBRIDGE_Handover_${activeReport.id}.html`;
+        document.body.append(link);
+        link.click();
+        link.remove();
+      } else if (printWindow) {
+        printWindow.location.href = url;
+      }
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (error) {
+      printWindow?.close();
+      setReportError(error instanceof Error ? error.message : 'Could not export the handover report.');
+    }
+  };
+
   const approvedFindings = findings.filter((f) => f.reviewStatus === 'APPROVED');
-  const pendingFindings = findings.filter((f) => f.reviewStatus === 'PENDING');
+  const pendingFindings = findings.filter(
+    (f) => f.reviewStatus === 'PENDING' || f.reviewStatus === 'NEEDS_CLARIFICATION'
+  );
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
@@ -125,25 +180,24 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
         <div className="flex items-center gap-2">
           {activeReport && (
             <div className="flex items-center gap-2">
-              <a
-                href={`/api/handover/${activeReport.id}/pdf`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() => void handleReportExport(false)}
                 className="px-3.5 py-2 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors flex items-center gap-2"
                 title="Open formatted dossier for print or PDF export"
               >
                 <Printer className="w-4 h-4 text-sky-400" />
                 <span>Print Dossier</span>
-              </a>
-              <a
-                href={`/api/handover/${activeReport.id}/pdf?download=1`}
-                download={`KNOWBRIDGE_Handover_${activeReport.id}.html`}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleReportExport(true)}
                 className="px-3.5 py-2 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors flex items-center gap-2"
                 title="Download complete standalone HTML report file"
               >
                 <FileDown className="w-4 h-4 text-emerald-400" />
                 <span>Download Report</span>
-              </a>
+              </button>
             </div>
           )}
           <button
@@ -158,6 +212,11 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
       </div>
 
       {/* Summary Banner */}
+      {reportError && (
+        <div role="alert" className="rounded-lg border border-rose-800 bg-rose-950/40 p-3 text-xs text-rose-300">
+          {reportError}
+        </div>
+      )}
       <div className="p-5 bg-slate-900 border border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
@@ -206,15 +265,14 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
             </div>
 
             <div className="flex items-center gap-3">
-              <a
-                href={`/api/handover/${activeReport.id}/pdf`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() => void handleReportExport(false)}
                 className="px-3 py-1.5 text-xs text-sky-400 hover:text-white bg-sky-950/40 hover:bg-sky-900/40 border border-sky-800/60 rounded-lg transition-colors flex items-center gap-1.5 font-medium"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span>Open Clean PDF View</span>
-              </a>
+              </button>
             </div>
           </div>
 
@@ -256,6 +314,11 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
                     </div>
                   </div>
                 ))}
+                {activeReport.recommendedNextActions.length === 0 && (
+                  <p className="text-xs text-slate-500">
+                    No human-approved tasks or risks are available to recommend. Review findings to build a source-backed action list.
+                  </p>
+                )}
               </div>
             </section>
 
@@ -368,11 +431,20 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
                 <span>Flagged Missing Evidence & Unresolved Questions</span>
               </h3>
               <div className="p-4 bg-amber-950/15 border border-amber-900/30 rounded-lg space-y-3">
-                {activeReport.unresolvedQuestions.map((q) => (
+                {[
+                  ...activeReport.unresolvedQuestions,
+                  ...activeReport.missingAndConflictingInfo.filter(
+                    (finding) => !activeReport.unresolvedQuestions.some((question) => question.id === finding.id)
+                  ),
+                  ...(activeReport.unapprovedFindings || []),
+                ].map((q) => (
                   <div key={q.id} className="text-xs space-y-1">
                     <div className="flex items-center gap-2 text-amber-300 font-medium">
                       <HelpCircle className="w-3.5 h-3.5 shrink-0" />
                       <span>{q.title}</span>
+                    </div>
+                    <div className="pl-5 text-[10px] font-mono text-amber-400/80">
+                      {q.reviewStatus} · {q.evidenceStatus}
                     </div>
                     <p className="text-slate-400 pl-5 text-[11px] leading-relaxed">{q.description}</p>
                     {q.uncertaintyReason && (
@@ -382,6 +454,11 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
                     )}
                   </div>
                 ))}
+                {activeReport.unresolvedQuestions.length === 0 &&
+                  activeReport.missingAndConflictingInfo.length === 0 &&
+                  (!activeReport.unapprovedFindings || activeReport.unapprovedFindings.length === 0) && (
+                    <p className="text-xs text-slate-500">No flagged or unreviewed claims in this report.</p>
+                  )}
               </div>
             </section>
 
@@ -439,10 +516,15 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
                   {signOffSuccess && (
                     <div className="text-xs text-emerald-400">Sign-off confirmed successfully.</div>
                   )}
+                  {pendingFindings.length > 0 && (
+                    <div className="text-xs text-amber-400">
+                      Sign-off is disabled until {pendingFindings.length} pending or clarification-requested finding(s) are reviewed.
+                    </div>
+                  )}
                   <div className="flex justify-end">
                     <button
                       onClick={handleExecutiveSignOff}
-                      disabled={isSigningOff}
+                      disabled={isSigningOff || pendingFindings.length > 0}
                       className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors flex items-center gap-1.5"
                     >
                       <UserCheck className="w-4 h-4" />

@@ -335,6 +335,7 @@ export interface HandoverReport {
   risksAndBlockers: Finding[];
   unresolvedQuestions: Finding[];
   missingAndConflictingInfo: Finding[];
+  unapprovedFindings?: Finding[];
   recommendedNextActions: {
     priority: number;
     title: string;

@@ -93,12 +93,22 @@ npm run build
 npm start
 ```
 
-### Environment Variables (.env)
+### Environment Variables (`.env`)
 ```env
-GEMINI_API_KEY="your-gemini-api-key"
+GEMINI_API_KEY=your-gemini-api-key
 PORT=3000
-JWT_SECRET="knowbridge-secret-salt-2026"
+JWT_SECRET=replace-with-a-random-secret-at-least-32-characters-long
 ```
+
+`GEMINI_API_KEY` is optional for local development. When it is not configured, document analysis uses a grounded rule-based fallback; the app reports which provider produced the findings. In production, set `JWT_SECRET` to a random value of at least 32 characters. The development-only default is not suitable for deployment.
+
+### Using the application
+
+- Register an account or sign in with your email and password. New registrations receive the member role; project creators are added as project owners.
+- Create or select a workspace, then upload PDF, DOCX, XLSX, XLS, CSV, TXT, Markdown, or JSON documents. Scanned PDFs need OCR before upload.
+- Review extracted findings and their source citations. Gemini findings are checked against the uploaded text; findings still require human review before they can appear as approved handover claims.
+- Generate a handover report after reviewing findings. Pending reviews must be resolved before executive sign-off. Export and sign-off require authentication.
+- Demo sign-in is available only in non-production environments.
 
 ---
 
@@ -106,7 +116,7 @@ JWT_SECRET="knowbridge-secret-salt-2026"
 
 - **Frontend:** React 19, TypeScript, Tailwind CSS v4, Motion, Lucide React
 - **Backend:** Node.js, Express, tsx
-- **AI Engine:** Google Gemini API (`gemini-3.8-flash` via `@google/genai`)
+- **AI Engine:** Google Gemini API (`gemini-3.8-flash` via `@google/genai`) with a grounded rule-based fallback
 - **Document Ingestion:** PyMuPDF / pdf-parse with page-level text extraction
 - **Security:** bcryptjs password hashing, JWT stateless authorization, RBAC
 - **Persistence:** Relational in-memory store backed by atomic disk persistence (`data/knowbridge_store.json`)

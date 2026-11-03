@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useProject } from '../../context/ProjectContext.tsx';
 import {
   FolderKanban,
@@ -19,30 +19,72 @@ import {
   MessageSquare,
   Database,
   Compass,
+  X,
 } from 'lucide-react';
 
 interface Props {
   currentView: string;
   setCurrentView: (view: string) => void;
   onOpenNewProjectModal: () => void;
+  isMobileOpen: boolean;
+  onClose: () => void;
 }
 
-export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNewProjectModal }) => {
+export const Sidebar: React.FC<Props> = ({
+  currentView,
+  setCurrentView,
+  onOpenNewProjectModal,
+  isMobileOpen,
+  onClose,
+}) => {
   const { projects, activeProject, setActiveProject, findings, documents } = useProject();
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const updateViewport = () => setIsDesktop(mediaQuery.matches);
+    updateViewport();
+    mediaQuery.addEventListener('change', updateViewport);
+    return () => mediaQuery.removeEventListener('change', updateViewport);
+  }, []);
+
+  const navigate = (view: string) => {
+    setCurrentView(view);
+    onClose();
+  };
 
   const pendingReviews = findings.filter((f) => f.reviewStatus === 'PENDING').length;
   const activeRisks = findings.filter((f) => f.category === 'RISK' || f.category === 'BLOCKER').length;
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 h-full overflow-y-auto">
+    <aside
+      id="app-navigation"
+      aria-label="Workspace navigation"
+      aria-hidden={!isDesktop && !isMobileOpen}
+      inert={!isDesktop && !isMobileOpen}
+      data-open={isMobileOpen}
+      className="mobile-nav fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(18rem,88vw)] shrink-0 flex-col overflow-y-auto border-r border-slate-800 bg-slate-950 shadow-2xl shadow-black/30 transition-transform duration-200 lg:sticky lg:top-16 lg:z-30 lg:h-[calc(100dvh-4rem)] lg:w-64 lg:bg-slate-900 lg:shadow-none"
+    >
       {/* Project Switcher */}
       <div className="p-4 border-b border-slate-800 relative">
-        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 block">
-          Current Workspace
-        </label>
+        <div className="mb-1.5 flex items-center justify-between">
+          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            Current Workspace
+          </label>
+          <button
+            type="button"
+            aria-label="Close navigation"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-white lg:hidden"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
         <button
           onClick={() => setProjectDropdownOpen(!projectDropdownOpen)}
+          aria-expanded={projectDropdownOpen}
+          aria-haspopup="listbox"
           className="w-full flex items-center justify-between px-3 py-2 bg-slate-950/70 hover:bg-slate-950 border border-slate-800 rounded-lg text-left transition-colors"
         >
           <div className="truncate pr-2">
@@ -68,6 +110,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNe
                 onClick={() => {
                   setActiveProject(p);
                   setProjectDropdownOpen(false);
+                  onClose();
                 }}
                 className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-800 transition-colors flex items-center justify-between ${
                   activeProject?.id === p.id ? 'bg-slate-800 text-sky-400 font-medium' : 'text-slate-300'
@@ -81,6 +124,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNe
               <button
                 onClick={() => {
                   setProjectDropdownOpen(false);
+                  onClose();
                   onOpenNewProjectModal();
                 }}
                 className="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-sky-400 hover:bg-sky-950/30 rounded transition-colors"
@@ -103,7 +147,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNe
           </div>
           <div className="space-y-0.5">
             <button
-              onClick={() => setCurrentView('workspace')}
+              onClick={() => navigate('workspace')}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 currentView === 'workspace'
                   ? 'bg-sky-600/10 text-sky-400 border border-sky-500/20'
@@ -120,7 +164,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNe
             </button>
 
             <button
-              onClick={() => setCurrentView('reconstruct')}
+              onClick={() => navigate('reconstruct')}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 currentView === 'reconstruct'
                   ? 'bg-sky-600/10 text-sky-400 border border-sky-500/20'
@@ -135,7 +179,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNe
             </button>
 
             <button
-              onClick={() => setCurrentView('evidence')}
+              onClick={() => navigate('evidence')}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 currentView === 'evidence'
                   ? 'bg-sky-600/10 text-sky-400 border border-sky-500/20'
@@ -152,7 +196,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNe
             </button>
 
             <button
-              onClick={() => setCurrentView('reviews')}
+              onClick={() => navigate('reviews')}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 currentView === 'reviews'
                   ? 'bg-sky-600/10 text-sky-400 border border-sky-500/20'
@@ -171,7 +215,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNe
             </button>
 
             <button
-              onClick={() => setCurrentView('handover')}
+              onClick={() => navigate('handover')}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 currentView === 'handover'
                   ? 'bg-sky-600/10 text-sky-400 border border-sky-500/20'
@@ -194,7 +238,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNe
           </div>
           <div className="space-y-0.5">
             <button
-              onClick={() => setCurrentView('assistant')}
+              onClick={() => navigate('assistant')}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 currentView === 'assistant'
                   ? 'bg-sky-600/10 text-sky-400 border border-sky-500/20'
@@ -209,7 +253,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNe
             </button>
 
             <button
-              onClick={() => setCurrentView('connectors')}
+              onClick={() => navigate('connectors')}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 currentView === 'connectors'
                   ? 'bg-sky-600/10 text-sky-400 border border-sky-500/20'
@@ -224,7 +268,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNe
             </button>
 
             <button
-              onClick={() => setCurrentView('setup')}
+              onClick={() => navigate('setup')}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 currentView === 'setup'
                   ? 'bg-sky-600/10 text-sky-400 border border-sky-500/20'
@@ -239,7 +283,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNe
             </button>
 
             <button
-              onClick={() => setCurrentView('graph')}
+              onClick={() => navigate('graph')}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 currentView === 'graph'
                   ? 'bg-sky-600/10 text-sky-400 border border-sky-500/20'
@@ -254,7 +298,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNe
             </button>
 
             <button
-              onClick={() => setCurrentView('tasks')}
+              onClick={() => navigate('tasks')}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 currentView === 'tasks'
                   ? 'bg-sky-600/10 text-sky-400 border border-sky-500/20'
@@ -268,7 +312,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNe
             </button>
 
             <button
-              onClick={() => setCurrentView('risks')}
+              onClick={() => navigate('risks')}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 currentView === 'risks'
                   ? 'bg-sky-600/10 text-sky-400 border border-sky-500/20'
@@ -287,7 +331,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNe
             </button>
 
             <button
-              onClick={() => setCurrentView('github')}
+              onClick={() => navigate('github')}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 currentView === 'github'
                   ? 'bg-sky-600/10 text-sky-400 border border-sky-500/20'
@@ -301,7 +345,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNe
             </button>
 
             <button
-              onClick={() => setCurrentView('activity')}
+              onClick={() => navigate('activity')}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 currentView === 'activity'
                   ? 'bg-sky-600/10 text-sky-400 border border-sky-500/20'
@@ -322,7 +366,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView, onOpenNe
             Hackathon Docs
           </div>
           <button
-            onClick={() => setCurrentView('docs')}
+            onClick={() => navigate('docs')}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
               currentView === 'docs'
                 ? 'bg-sky-600/10 text-sky-400 border border-sky-500/20'

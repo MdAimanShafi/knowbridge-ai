@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '../types/index.ts';
 import { safeFetchJson } from '../utils/api.ts';
 
@@ -8,145 +8,101 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   demoLogin: (role?: 'alex' | 'sarah' | 'marcus') => Promise<boolean>;
-  loginWithGoogle: () => Promise<boolean>;
   logout: () => void;
   register: (name: string, email: string, password: string, title?: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+interface AuthResponse {
+  user: User;
+  token: string;
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('kb_token'));
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('kb_token'));
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
+
     async function checkAuth() {
       const storedToken = localStorage.getItem('kb_token');
-      if (storedToken) {
-        const meRes = await safeFetchJson<{ user: User }>('/api/auth/me');
-        if (meRes.ok && meRes.data?.user) {
-          setUser(meRes.data.user);
-          setToken(storedToken);
-          setIsLoading(false);
-          return;
-        }
+      if (!storedToken) {
+        if (active) setIsLoading(false);
+        return;
       }
-      
-      // Auto-authenticate as default demo user for seamless hackathon judge testing
-      const demoRes = await safeFetchJson<{ user: User; token: string }>('/api/auth/demo-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: 'alex' }),
-      });
 
-      if (demoRes.ok && demoRes.data) {
-        setUser(demoRes.data.user);
-        setToken(demoRes.data.token);
-        localStorage.setItem('kb_token', demoRes.data.token);
+      const response = await safeFetchJson<{ user: User }>('/api/auth/me');
+      if (!active) return;
+
+      if (response.ok && response.data?.user) {
+        setUser(response.data.user);
+        setToken(storedToken);
+      } else {
+        localStorage.removeItem('kb_token');
+        setToken(null);
       }
       setIsLoading(false);
     }
 
-    checkAuth();
+    void checkAuth();
+    return () => {
+      active = false;
+    };
   }, []);
 
+  const establishSession = (data: AuthResponse) => {
+    setUser(data.user);
+    setToken(data.token);
+    localStorage.setItem('kb_token', data.token);
+  };
+
   const login = async (email: string, password: string) => {
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      if (!res.ok) return false;
-      const data = await res.json();
-      setUser(data.user);
-      setToken(data.token);
-      localStorage.setItem('kb_token', data.token);
-      return true;
-    } catch {
-      return false;
-    }
+    const response = await safeFetchJson<AuthResponse>('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok || !response.data?.token || !response.data.user) return false;
+    establishSession(response.data);
+    return true;
   };
 
   const demoLogin = async (role: 'alex' | 'sarah' | 'marcus' = 'alex') => {
-    try {
-      const res = await fetch('/api/auth/demo-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role }),
-      });
-      if (!res.ok) return false;
-      const data = await res.json();
-      setUser(data.user);
-      setToken(data.token);
-      localStorage.setItem('kb_token', data.token);
-      return true;
-    } catch {
-      return false;
-    }
+    const response = await safeFetchJson<AuthResponse>('/api/auth/demo-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    });
+
+    if (!response.ok || !response.data?.token || !response.data.user) return false;
+    establishSession(response.data);
+    return true;
   };
 
   const register = async (name: string, email: string, password: string, title?: string) => {
-    try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, title }),
-      });
-      if (!res.ok) return false;
-      const data = await res.json();
-      setUser(data.user);
-      setToken(data.token);
-      localStorage.setItem('kb_token', data.token);
-      return true;
-    } catch {
-      return false;
-    }
+    const response = await safeFetchJson<AuthResponse>('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, title }),
+    });
+
+    if (!response.ok || !response.data?.token || !response.data.user) return false;
+    establishSession(response.data);
+    return true;
   };
 
-  const loginWithGoogle = async () => {
-    try {
-      const { signInWithPopup } = await import('firebase/auth');
-      const { auth, googleProvider } = await import('../firebase/config.ts');
-      const cred = await signInWithPopup(auth, googleProvider);
-      const googleUser = cred.user;
-      if (googleUser) {
-        const u: User = {
-          id: googleUser.uid,
-          name: googleUser.displayName || 'Authorized Google User',
-          email: googleUser.email || 'user@google.com',
-          role: 'LEAD',
-          title: 'Project Lead (Google Verified)',
-          avatarUrl: googleUser.photoURL || undefined,
-          createdAt: new Date().toISOString(),
-        };
-        setUser(u);
-        const fbToken = `firebase-${googleUser.uid}`;
-        setToken(fbToken);
-        localStorage.setItem('kb_token', fbToken);
-        return true;
-      }
-      return false;
-    } catch (err) {
-      console.warn('Firebase Google Sign-In error:', err);
-      return false;
-    }
-  };
-
-  const logout = async () => {
-    try {
-      const { signOut } = await import('firebase/auth');
-      const { auth } = await import('../firebase/config.ts');
-      await signOut(auth);
-    } catch {}
+  const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('kb_token');
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, demoLogin, loginWithGoogle, logout, register }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, demoLogin, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,9 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useProject } from '../context/ProjectContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import { EvidenceStatusBadge } from '../components/common/EvidenceStatusBadge.tsx';
 import { FindingCategoryBadge } from '../components/common/FindingCategoryBadge.tsx';
 import { Finding, ProjectDocument } from '../types/index.ts';
+import { safeFetchJson } from '../utils/api.ts';
 import {
   FileText,
   Upload,
@@ -42,6 +43,18 @@ export const ProjectWorkspacePage: React.FC<Props> = ({ setCurrentView, onInspec
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string>('');
   const [notification, setNotification] = useState<string>('');
+  const [analysisWarning, setAnalysisWarning] = useState<string>('');
+  const [aiProvider, setAiProvider] = useState<'GEMINI' | 'GROUNDED_FALLBACK' | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    safeFetchJson<{ aiProvider: 'GEMINI' | 'GROUNDED_FALLBACK' }>('/api/health').then((response) => {
+      if (active && response.ok && response.data) setAiProvider(response.data.aiProvider);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -50,6 +63,7 @@ export const ProjectWorkspacePage: React.FC<Props> = ({ setCurrentView, onInspec
     setIsUploading(true);
     setUploadError('');
     setNotification('');
+    setAnalysisWarning('');
 
     const formData = new FormData();
     formData.append('file', file);
@@ -70,19 +84,25 @@ export const ProjectWorkspacePage: React.FC<Props> = ({ setCurrentView, onInspec
       }
 
       const data = await res.json();
-      setNotification(`Successfully parsed "${file.name}" (${data.document.pageCount} pages). Extracted ${data.findingsExtracted || 0} findings!`);
+      setNotification(
+        data.isDuplicate
+          ? `"${file.name}" is already in this project. Existing document and findings were kept.`
+          : `Parsed "${file.name}" (${data.document.pageCount} pages) and extracted ${data.findingsExtracted || 0} findings${data.analysisProvider === 'GEMINI' ? ' with Gemini' : ' with grounded rules'}.`
+      );
+      setAnalysisWarning(data.analysisWarning || '');
       await refreshProjectData();
-      if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err: any) {
       setUploadError(err.message || 'Failed to upload document');
     } finally {
       setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const handleProcessDocument = async (docId: string) => {
     setIsProcessing(docId);
     setNotification('');
+    setUploadError('');
     try {
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -92,13 +112,15 @@ export const ProjectWorkspacePage: React.FC<Props> = ({ setCurrentView, onInspec
         headers,
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setNotification(`Reconstructed ${data.count} structured findings via Gemini 3.8 Flash!`);
-        await refreshProjectData();
-      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Document reconstruction failed.');
+      setNotification(
+        `Reconstructed ${data.count} structured findings ${data.analysisProvider === 'GEMINI' ? 'with Gemini' : 'with grounded rules'}.`
+      );
+      setAnalysisWarning(data.analysisWarning || '');
+      await refreshProjectData();
     } catch (err) {
-      console.error('Processing error:', err);
+      setUploadError(err instanceof Error ? err.message : 'Document reconstruction failed.');
     } finally {
       setIsProcessing(null);
     }
@@ -220,6 +242,12 @@ export const ProjectWorkspacePage: React.FC<Props> = ({ setCurrentView, onInspec
         </div>
       )}
 
+      {analysisWarning && (
+        <div role="status" className="rounded-lg border border-amber-800 bg-amber-950/40 p-3 text-xs text-amber-200">
+          {analysisWarning}
+        </div>
+      )}
+
       {uploadError && (
         <div className="p-3 bg-red-950/40 border border-red-800 text-xs text-red-300 rounded-lg flex items-center justify-between">
           <span>{uploadError}</span>
@@ -246,7 +274,7 @@ export const ProjectWorkspacePage: React.FC<Props> = ({ setCurrentView, onInspec
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileUpload}
-                accept=".pdf,.txt,.md,.json"
+                accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.md,.json"
                 className="hidden"
               />
               <button
@@ -331,16 +359,22 @@ export const ProjectWorkspacePage: React.FC<Props> = ({ setCurrentView, onInspec
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-slate-100">
-                    Gemini 3.8 Flash Knowledge Reconstruction Engine
+                    Project Knowledge Analysis
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Transforms unstructured project PDFs into structured schemas with verified citations.
+                    Extracts decisions, tasks, dependencies, and risks from source text, then checks every citation against its page.
                   </p>
                 </div>
               </div>
               <div className="text-xs font-mono text-emerald-400 flex items-center gap-1.5">
                 <CheckCircle className="w-4 h-4" />
-                <span>Grounded Citations Active</span>
+                <span>
+                  {aiProvider === null
+                    ? 'Checking AI provider...'
+                    : aiProvider === 'GEMINI'
+                      ? 'Gemini configured'
+                      : 'Grounded rules fallback'}
+                </span>
               </div>
             </div>
 

@@ -5,6 +5,11 @@ import { Finding, ReviewStatus } from '../../types/index.ts';
 
 export const findingRoutes = Router();
 
+function canReviewProject(projectId: string, userId: string) {
+  const membership = db.getProjectMembers(projectId).find((member) => member.userId === userId);
+  return membership && ['OWNER', 'LEAD', 'REVIEWER'].includes(membership.role);
+}
+
 // Get findings for project with optional filtering
 findingRoutes.get('/projects/:projectId/findings', authMiddleware, (req: Request, res: Response) => {
   const { projectId } = req.params;
@@ -57,6 +62,12 @@ findingRoutes.post('/findings/:id/review', authMiddleware, (req: Request, res: R
   if (!existing) {
     return res.status(404).json({ error: 'Finding not found.' });
   }
+  if (!canReviewProject(existing.projectId, user.id)) {
+    return res.status(403).json({ error: 'Project reviewer access is required to review this finding.' });
+  }
+  if (typeof reviewerNotes === 'string' && reviewerNotes.length > 5000) {
+    return res.status(400).json({ error: 'Reviewer notes must be 5,000 characters or fewer.' });
+  }
 
   const updated = db.updateFinding(req.params.id, {
     reviewStatus: reviewStatus as ReviewStatus,
@@ -86,8 +97,31 @@ findingRoutes.put('/findings/:id', authMiddleware, (req: Request, res: Response)
     return res.status(404).json({ error: 'Finding not found.' });
   }
 
+  const editableFields = [
+    'title',
+    'description',
+    'category',
+    'evidenceStatus',
+    'evidenceExcerpt',
+    'owner',
+    'deadline',
+    'severity',
+    'rationale',
+    'impact',
+    'conflictingDetails',
+    'uncertaintyReason',
+  ] as const;
+  const updates = Object.fromEntries(
+    editableFields
+      .filter((field) => Object.prototype.hasOwnProperty.call(req.body, field))
+      .map((field) => [field, req.body[field]])
+  );
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: 'Provide at least one editable finding field.' });
+  }
+
   const updated = db.updateFinding(req.params.id, {
-    ...req.body,
+    ...updates,
     updatedAt: new Date().toISOString(),
   });
 
@@ -124,6 +158,9 @@ findingRoutes.post('/projects/:projectId/findings', authMiddleware, (req: Reques
 
   if (!title || !description || !category) {
     return res.status(400).json({ error: 'Title, description, and category are required.' });
+  }
+  if (!db.getProjectById(projectId)) {
+    return res.status(404).json({ error: 'Project not found.' });
   }
 
   const newFinding: Finding = {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { ProjectProvider, useProject } from './context/ProjectContext.tsx';
 import { Header } from './components/layout/Header.tsx';
@@ -18,6 +18,7 @@ import { DataSourcesCenterPage } from './pages/DataSourcesCenterPage.tsx';
 import { ProjectSetupPage } from './pages/ProjectSetupPage.tsx';
 import { EvidenceInspectorModal } from './components/common/EvidenceInspectorModal.tsx';
 import { NewProjectWizardModal } from './components/common/NewProjectWizardModal.tsx';
+import { AuthPage } from './pages/AuthPage.tsx';
 import { Finding } from './types/index.ts';
 
 function AppContent() {
@@ -26,6 +27,18 @@ function AppContent() {
   const [currentView, setCurrentView] = useState<string>('workspace');
   const [inspectingFinding, setInspectingFinding] = useState<Finding | null>(null);
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsSidebarOpen(false);
+    };
+
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [isSidebarOpen]);
 
   if (isLoading) {
     return (
@@ -36,6 +49,10 @@ function AppContent() {
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return <AuthPage />;
   }
 
   const renderActiveView = () => {
@@ -95,21 +112,31 @@ function AppContent() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-sky-600 selection:text-white">
       {/* Top Bar adhering to Top Bar Contract */}
       <Header
-        currentView={currentView}
         setCurrentView={setCurrentView}
         onOpenNewProjectModal={() => setIsNewProjectModalOpen(true)}
+        onOpenNavigation={() => setIsSidebarOpen(true)}
       />
 
       <div className="flex-1 flex overflow-hidden">
         {/* Navigation Sidebar */}
+        {isSidebarOpen && (
+          <button
+            type="button"
+            aria-label="Close navigation"
+            className="fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
         <Sidebar
           currentView={currentView}
           setCurrentView={setCurrentView}
           onOpenNewProjectModal={() => setIsNewProjectModalOpen(true)}
+          isMobileOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
         />
 
         {/* Main Workspace Canvas */}
-        <main className="flex-1 overflow-y-auto bg-slate-950/90">{renderActiveView()}</main>
+        <main className="min-w-0 flex-1 overflow-y-auto bg-slate-950/90">{renderActiveView()}</main>
       </div>
 
       {/* Global Modals */}

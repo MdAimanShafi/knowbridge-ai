@@ -1,8 +1,12 @@
+import 'dotenv/config';
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { db } from './db.ts';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'knowbridge-secret-salt-2026-wcc-forge';
+const configuredSecret = process.env.JWT_SECRET;
+if (process.env.NODE_ENV === 'production' && (!configuredSecret || configuredSecret.length < 32)) {
+  throw new Error('Set JWT_SECRET to a random value of at least 32 characters in production.');
+}
+const JWT_SECRET = configuredSecret || 'knowbridge-development-only-secret';
 
 export interface AuthenticatedUser {
   id: string;
@@ -26,39 +30,20 @@ export function generateToken(user: { id: string; email: string; name: string; r
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    // If demo mode or no token, attach demo user by default for seamless judge workflow if needed,
-    // or require auth. Let's inspect token:
-    const demo = db.findUserByEmail('demo@knowbridge.ai');
-    if (demo) {
-      (req as any).user = {
-        id: demo.id,
-        email: demo.email,
-        name: demo.name,
-        role: demo.role,
-      };
-      return next();
-    }
-    return res.status(401).json({ error: 'Authentication required. Missing Bearer token.' });
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Authentication required. Provide a valid bearer token.' });
   }
 
-  const token = authHeader.split(' ')[1];
+  const token = authHeader.slice('Bearer '.length).trim();
+  if (!token) {
+    return res.status(401).json({ error: 'Authentication required. Provide a valid bearer token.' });
+  }
+
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as AuthenticatedUser;
     (req as any).user = decoded;
-    next();
-  } catch (err) {
-    // Fall back to demo user if token is expired in demo environment
-    const demo = db.findUserByEmail('demo@knowbridge.ai');
-    if (demo) {
-      (req as any).user = {
-        id: demo.id,
-        email: demo.email,
-        name: demo.name,
-        role: demo.role,
-      };
-      return next();
-    }
+    return next();
+  } catch {
     return res.status(401).json({ error: 'Invalid or expired token.' });
   }
 }

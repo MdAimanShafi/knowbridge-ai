@@ -29,6 +29,7 @@ export const NewProjectWizardModal: React.FC<Props> = ({ isOpen, onClose, onProj
 
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   // Step 1: Core Details & Objectives
   const [name, setName] = useState('');
@@ -104,6 +105,7 @@ export const NewProjectWizardModal: React.FC<Props> = ({ isOpen, onClose, onProj
     if (!name.trim()) return;
 
     setIsSubmitting(true);
+    setSubmitError('');
     try {
       const techArray = techStackInput
         .split(',')
@@ -138,9 +140,11 @@ export const NewProjectWizardModal: React.FC<Props> = ({ isOpen, onClose, onProj
         if (onProjectCreated) {
           onProjectCreated(created.id);
         }
+      } else {
+        setSubmitError('The project could not be created. Check your connection and try again.');
       }
     } catch (err) {
-      console.error('Project creation failed:', err);
+      setSubmitError(err instanceof Error ? err.message : 'The project could not be created.');
     } finally {
       setIsSubmitting(false);
     }
@@ -155,6 +159,11 @@ export const NewProjectWizardModal: React.FC<Props> = ({ isOpen, onClose, onProj
       maxWidth="max-w-3xl"
     >
       <form onSubmit={handleSubmit} className="space-y-6 text-xs text-slate-200">
+        {submitError && (
+          <div role="alert" className="rounded-lg border border-rose-800 bg-rose-950/40 p-3 text-xs text-rose-300">
+            {submitError}
+          </div>
+        )}
         {/* Step Indicator */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           {[

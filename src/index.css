@@ -7,6 +7,63 @@
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: #020617;
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 68% -18%, rgba(14, 116, 144, 0.12), transparent 38rem),
+    #020617;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.mobile-nav {
+  transform: translateX(-100%);
+}
+
+.mobile-nav[data-open='true'] {
+  transform: translateX(0);
+}
+
+@media (min-width: 1024px) {
+  .mobile-nav {
+    transform: none;
+  }
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.85);
+  outline-offset: 2px;
+}
+
+::selection {
+  color: #f8fafc;
+  background: rgba(2, 132, 199, 0.7);
+}
+
 /* Custom scrollbars for clean enterprise UI */
 ::-webkit-scrollbar {
   width: 6px;
@@ -24,4 +81,15 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
