@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile representation in KnowBridge AI",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "title": { "type": "string" },
+        "role": { "type": "string", "enum": ["OWNER", "LEAD", "REVIEWER", "MEMBER"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "email", "name"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Project workspace entity",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "status": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "ownerName": { "type": "string" },
+        "departingMemberName": { "type": "string" },
+        "successorName": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "ownerId"]
+    },
+    "Finding": {
+      "title": "Finding",
+      "description": "Extracted project knowledge finding with citations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "evidenceStatus": { "type": "string" },
+        "reviewStatus": { "type": "string" },
+        "sourceDocumentName": { "type": "string" },
+        "pageNumber": { "type": "number" },
+        "evidenceExcerpt": { "type": "string" }
+      },
+      "required": ["id", "projectId", "title", "category", "evidenceStatus"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profile data"
+    },
+    "/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/Project" },
+      "description": "Stores project workspace records"
+    },
+    "/projects/{projectId}/findings/{findingId}": {
+      "schema": { "$ref": "#/entities/Finding" },
+      "description": "Stores knowledge findings per project"
+    }
+  }
+}

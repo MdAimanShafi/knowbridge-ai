@@ -1,11 +1,112 @@
-<div align="center">
+# KNOWBRIDGE AI — Intelligent Project Knowledge Handover Platform
+### Preserving Knowledge. Empowering Continuity.
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+**Hackathon:** We Code Coders — WCC Forge 48  
+**Round:** Round 2 — The Build  
+**Team Name:** SYNTAX ERROR  
 
-  <h1>Built with AI Studio</h2>
+---
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## 1. The Core Problem
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+> **"Prevent Critical Knowledge From Leaving With People."**
 
-</div>
+When an employee, developer, researcher, or project lead leaves a team, important knowledge often leaves with them:
+- The reasoning behind architectural and technical decisions
+- Incomplete tasks, blockers, and subtle edge cases
+- Cross-team technical dependencies
+- Unresolved operational risks
+- Dispersed documentation across PDFs, markdown notes, reports, and GitHub repositories
+
+Incoming team members are forced to spend weeks manually reconstructing context, causing delays, duplicated work, security vulnerabilities, and project disruption.
+
+**KNOWBRIDGE AI** solves this by establishing a continuous, evidence-grounded, permission-aware project handover workflow.
+
+---
+
+## 2. Central 5-Stage Workflow
+
+```
+[ CONNECT ] ──▶ [ RECONSTRUCT ] ──▶ [ VERIFY ] ──▶ [ REVIEW ] ──▶ [ HANDOVER ]
+ Upload PDFs      Gemini 3.8 Flash    Page Citations    Human Lead     Official Dossier
+ & GitHub Repo    Structured Schema   Conflict Audits   Sign-Off       & PDF Export
+```
+
+1. **STAGE 1: CONNECT**
+   - Ingest authorized project specifications, architecture documents, and status reports.
+   - Synchronize GitHub repositories (pull requests, open issues, and commits).
+
+2. **STAGE 2: RECONSTRUCT**
+   - Server-side Gemini 3.8 Flash extracts structured project entities:
+     * Architectural Decisions & Rationales
+     * Completed Milestones & Pending Tasks
+     * Task Owners & Deadlines
+     * Technical Dependencies & Blockers
+     * Operational Risks & Severity Ratings
+     * Unresolved Questions
+
+3. **STAGE 3: VERIFY**
+   - Every claim is tied to an original document and exact page-level quote excerpt.
+   - Evidence states:
+     * `VERIFIED`: Supported by direct textual evidence.
+     * `UNCERTAIN`: Incomplete or ambiguous source statement.
+     * `CONFLICTING`: Two or more sources present inconsistent directions (e.g. Stripe vs Adyen evaluation).
+     * `MISSING_EVIDENCE`: Operational questions lacking key credentials or runbooks.
+
+4. **STAGE 4: REVIEW**
+   - **Constitutional Rule: AI never approves its own findings.**
+   - Human leads approve, reject, or request clarification with reviewer notes.
+
+5. **STAGE 5: HANDOVER**
+   - Compiles an official handover dossier.
+   - Segregates verified approved findings from pending or flagged claims.
+   - Provides printable and downloadable PDF export.
+   - Records executive sign-off and transition acceptance.
+
+---
+
+## 3. Flagship Demo Project: "E-Commerce Platform Migration" (Project Phoenix)
+
+The platform is pre-loaded with synthetic documents and verified citations for immediate hackathon judge testing:
+- **Project:** Monolith decommissioning to GKE microservices & PostgreSQL 16.
+- **Departing Architect:** Sarah Lin (Staff Platform Architect)
+- **Incoming Successor:** Alex Rivera (Senior Software Engineer)
+- **Reviewer:** Marcus Vance (Engineering Director)
+- **Pre-loaded Documents:**
+  * `Project Architecture Specification v3.pdf`
+  * `Payment Integration and PCI Scope Notes.pdf`
+  * `Q3 Migration Status and Risk Matrix.pdf`
+
+---
+
+## 4. Quick Start & Execution
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Run the full-stack application (server.ts with Vite middlewares on port 3000)
+npm run dev
+
+# 3. Build for production
+npm run build
+npm start
+```
+
+### Environment Variables (.env)
+```env
+GEMINI_API_KEY="your-gemini-api-key"
+PORT=3000
+JWT_SECRET="knowbridge-secret-salt-2026"
+```
+
+---
+
+## 5. Technology Stack
+
+- **Frontend:** React 19, TypeScript, Tailwind CSS v4, Motion, Lucide React
+- **Backend:** Node.js, Express, tsx
+- **AI Engine:** Google Gemini API (`gemini-3.8-flash` via `@google/genai`)
+- **Document Ingestion:** PyMuPDF / pdf-parse with page-level text extraction
+- **Security:** bcryptjs password hashing, JWT stateless authorization, RBAC
+- **Persistence:** Relational in-memory store backed by atomic disk persistence (`data/knowbridge_store.json`)

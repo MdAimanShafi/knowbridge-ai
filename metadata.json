@@ -1,0 +1,6 @@
+{
+  "name": "KNOWBRIDGE AI",
+  "description": "Intelligent Project Knowledge Handover Platform — Preserving Knowledge, Empowering Continuity.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

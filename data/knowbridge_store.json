@@ -1,0 +1,1841 @@
+{
+  "users": [
+    {
+      "id": "user-demo-1",
+      "email": "demo@knowbridge.ai",
+      "name": "Alex Rivera",
+      "title": "Incoming Senior Engineer (Successor)",
+      "role": "LEAD",
+      "passwordHash": "$2b$10$PFg7z7XXjdtElfm7LMm.4.RCLP2MqnlKEpnhoZj2ilCRhWfJcFUru",
+      "createdAt": "2026-10-15T09:00:00Z"
+    },
+    {
+      "id": "user-sarah-2",
+      "email": "sarah.lin@phoenix-retail.com",
+      "name": "Sarah Lin",
+      "title": "Staff Platform Architect (Departing)",
+      "role": "OWNER",
+      "passwordHash": "$2b$10$PFg7z7XXjdtElfm7LMm.4.RCLP2MqnlKEpnhoZj2ilCRhWfJcFUru",
+      "createdAt": "2026-08-01T10:00:00Z"
+    },
+    {
+      "id": "user-marcus-3",
+      "email": "marcus.vance@phoenix-retail.com",
+      "name": "Marcus Vance",
+      "title": "Engineering Director & Reviewer",
+      "role": "REVIEWER",
+      "passwordHash": "$2b$10$PFg7z7XXjdtElfm7LMm.4.RCLP2MqnlKEpnhoZj2ilCRhWfJcFUru",
+      "createdAt": "2026-08-10T11:00:00Z"
+    }
+  ],
+  "projects": [
+    {
+      "id": "proj-phoenix-001",
+      "name": "E-Commerce Platform Migration",
+      "code": "PHX-MIG",
+      "description": "Mission-critical replatforming of legacy monolithic storefront to distributed microservices on Kubernetes, including multi-region database migration and payment gateway overhaul.",
+      "category": "Cloud Infrastructure & Core Services",
+      "status": "HANDOVER_IN_PROGRESS",
+      "ownerId": "user-sarah-2",
+      "ownerName": "Sarah Lin",
+      "departingMemberName": "Sarah Lin (Staff Architect)",
+      "departingMemberRole": "Original Core Architect & Tech Lead",
+      "successorName": "Alex Rivera (Incoming Senior Engineer)",
+      "targetHandoverDate": "2026-11-15",
+      "createdAt": "2026-09-01T08:00:00Z",
+      "updatedAt": "2026-11-01T18:30:00Z"
+    },
+    {
+      "id": "proj-telehealth-002",
+      "name": "HealthBridge Telehealth Gateway v2.4",
+      "code": "HLT-GW",
+      "description": "HIPAA-compliant WebRTC audio/video consultations proxy with end-to-end audit trails and EHR integration.",
+      "category": "Healthcare & Regulatory",
+      "status": "ACTIVE",
+      "ownerId": "user-sarah-2",
+      "ownerName": "Sarah Lin",
+      "departingMemberName": "Dr. Emily Chen (Lead Systems Eng)",
+      "departingMemberRole": "Security & Video Pipeline Lead",
+      "successorName": "David Kalu (Systems Engineer)",
+      "targetHandoverDate": "2026-12-01",
+      "createdAt": "2026-10-01T10:00:00Z",
+      "updatedAt": "2026-10-28T14:15:00Z"
+    }
+  ],
+  "projectMembers": [
+    {
+      "id": "pm-1",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-sarah-2",
+      "userName": "Sarah Lin",
+      "userEmail": "sarah.lin@phoenix-retail.com",
+      "role": "OWNER",
+      "joinedAt": "2026-09-01T08:00:00Z"
+    },
+    {
+      "id": "pm-2",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "userName": "Alex Rivera",
+      "userEmail": "demo@knowbridge.ai",
+      "role": "LEAD",
+      "joinedAt": "2026-10-20T10:00:00Z"
+    },
+    {
+      "id": "pm-3",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-marcus-3",
+      "userName": "Marcus Vance",
+      "userEmail": "marcus.vance@phoenix-retail.com",
+      "role": "REVIEWER",
+      "joinedAt": "2026-09-05T09:00:00Z"
+    }
+  ],
+  "documents": [
+    {
+      "id": "doc-arch-001",
+      "projectId": "proj-phoenix-001",
+      "filename": "Project_Architecture_Specification_v3.pdf",
+      "originalName": "Project Architecture Specification v3.pdf",
+      "filesize": 1420800,
+      "mimeType": "application/pdf",
+      "pageCount": 14,
+      "status": "EXTRACTED",
+      "uploaderId": "user-sarah-2",
+      "uploaderName": "Sarah Lin",
+      "uploadedAt": "2026-09-12T14:22:00Z",
+      "processedAt": "2026-09-12T14:25:00Z",
+      "summary": "Defines the target microservices topology, PostgreSQL 16 read-replica clusters, Envoy gateway routing rules, and JWT auth flow.",
+      "pages": [
+        {
+          "pageNumber": 1,
+          "text": "E-COMMERCE PLATFORM MIGRATION SPECIFICATION\nDocument ID: DOC-PHX-ARCH-03\nAuthor: Sarah Lin, Staff Platform Architect\n1. Executive Summary\nThe legacy monolith (PHP/MySQL) is being decommissioned in favor of an event-driven Go and Node.js microservices architecture deployed to Google Kubernetes Engine (GKE). Core data persistence will transition to managed PostgreSQL with Citus distributed sharding."
+        },
+        {
+          "pageNumber": 3,
+          "text": "3. Technical Decision Record: Database Migration Strategy\nDECISION: We have chosen PostgreSQL 16 over DynamoDB and MongoDB.\nRATIONALE: Relational consistency across order line items, strict ACID guarantees during payment transactions, and native JSONB capabilities for flexible product catalog facets.\nSTATUS: Migration tooling (Debezium + Kafka CDC pipeline) is completed for 80% of tables. Final cutover scheduled for November 12, 2026."
+        },
+        {
+          "pageNumber": 7,
+          "text": "7. Authentication and Service Mesh Communication\nDECISION: All inter-service gRPC communication will enforce mutual TLS (mTLS) through Istio sidecars.\nDEPENDENCY: Service-to-service authorization depends strictly on the central user-service auth module emitting RS256 signed tokens.\nBLOCKER: The auth module latency spikes under load (p99 > 340ms) when validating expired session tokens against Redis."
+        }
+      ]
+    },
+    {
+      "id": "doc-pay-002",
+      "projectId": "proj-phoenix-001",
+      "filename": "Payment_Integration_and_PCI_Scope_Notes.pdf",
+      "originalName": "Payment Integration and PCI Scope Notes.pdf",
+      "filesize": 852000,
+      "mimeType": "application/pdf",
+      "pageCount": 8,
+      "status": "EXTRACTED",
+      "uploaderId": "user-sarah-2",
+      "uploaderName": "Sarah Lin",
+      "uploadedAt": "2026-10-02T09:15:00Z",
+      "processedAt": "2026-10-02T09:17:00Z",
+      "summary": "Payment provider integration analysis, Stripe vs Adyen evaluation, tokenization workflow, and PCI-DSS Level 1 compliance requirements.",
+      "pages": [
+        {
+          "pageNumber": 2,
+          "text": "PAYMENT INTEGRATION ARCHITECTURE NOTES\nDate: October 2, 2026\nOwner: Sarah Lin\n2. Payment Provider Selection & Conflicting Directive\nIn the August committee meeting, the platform team tentatively selected Stripe Elements for tokenization. However, on September 28, VP of Finance requested evaluation of Adyen due to European interchange rate savings.\nCURRENT STATUS: Stripe sandbox integration is completed; Adyen contract is still pending legal review. Engineering MUST know if the dual-provider abstraction is required before the November freeze."
+        },
+        {
+          "pageNumber": 4,
+          "text": "4. Critical Regulatory Risk: PCI-DSS Audit Deadline\nRISK: Annual external PCI-DSS compliance audit commences on November 18, 2026.\nIMPACT: HIGH / CRITICAL. If token storage vaulting is not fully decoupled from primary database replicas, audit failure will halt credit card processing across all storefronts.\nOWNER: Payment Squad Lead (Unassigned pending Sarah Lin departure handover)."
+        },
+        {
+          "pageNumber": 6,
+          "text": "6. Incomplete Work and Outstanding Tasks\n- Task 1: Complete Webhook idempotency handler for asynchronous payment failure notifications. (PENDING)\n- Task 2: Implement automated fallback to secondary gateway in case of primary API 5xx outage. (PENDING - Needs approval)\n- Task 3: Load test webhook processor with 10,000 req/sec batch payload."
+        }
+      ]
+    },
+    {
+      "id": "doc-status-003",
+      "projectId": "proj-phoenix-001",
+      "filename": "Q3_Migration_Status_and_Risk_Matrix.pdf",
+      "originalName": "Q3 Migration Status and Risk Matrix.pdf",
+      "filesize": 1120400,
+      "mimeType": "application/pdf",
+      "pageCount": 11,
+      "status": "EXTRACTED",
+      "uploaderId": "user-marcus-3",
+      "uploaderName": "Marcus Vance",
+      "uploadedAt": "2026-10-24T16:40:00Z",
+      "processedAt": "2026-10-24T16:43:00Z",
+      "summary": "Q3 project milestones, team velocity, completed deliverables, unresolved cross-team questions, and handover transition checklist.",
+      "pages": [
+        {
+          "pageNumber": 2,
+          "text": "PHOENIX REPLATFORMING: Q3 EXECUTIVE STATUS REPORT\nReporting Period: July 1 - September 30, 2026\nCompleted Milestones:\n1. GKE multi-zone cluster provisioning with automated Terraform modules (COMPLETED - 100%).\n2. Customer identity & OAuth2 token issuance service migrated from monolithic sessions (COMPLETED - 100%).\n3. Product Catalog GraphQL microservice deployed to staging (COMPLETED - 100%)."
+        },
+        {
+          "pageNumber": 5,
+          "text": "5. Cross-Team Dependencies and Technical Blockers\nDEPENDENCY: Real-time inventory sync is dependent on ERP SAP connector team delivering API v2 by October 30. (Status: Delayed by 2 weeks).\nBLOCKER: Search indexing worker memory leak in Elasticsearch cluster causes OOM kills every 72 hours when indexing catalog diffs."
+        },
+        {
+          "pageNumber": 8,
+          "text": "8. Unresolved Knowledge Gaps & Questions Before Sarah Leaves\nQUESTION 1: Who holds the root credentials and PGP key for the encrypted database backup volume in S3/GCS?\nQUESTION 2: What is the failover protocol if the primary Kafka broker partition leader crashes during the live DNS switchover?\nQUESTION 3: Is the legacy coupon calculation engine documented anywhere, or does the new checkout rewrite simply discard unsupported promotion types?"
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "fnd-phx-001",
+      "projectId": "proj-phoenix-001",
+      "title": "Database Architecture Decision: PostgreSQL 16 with Citus",
+      "description": "Selected managed PostgreSQL 16 over DynamoDB and MongoDB to ensure strict ACID transactions across distributed order processing and native JSONB catalog facets.",
+      "category": "DECISION",
+      "evidenceStatus": "VERIFIED",
+      "reviewStatus": "APPROVED",
+      "sourceDocumentId": "doc-arch-001",
+      "sourceDocumentName": "Project_Architecture_Specification_v3.pdf",
+      "pageNumber": 3,
+      "evidenceExcerpt": "DECISION: We have chosen PostgreSQL 16 over DynamoDB and MongoDB. RATIONALE: Relational consistency across order line items, strict ACID guarantees during payment transactions...",
+      "rationale": "Relational consistency across line items and ACID guarantees during high-volume flash sales.",
+      "owner": "Sarah Lin (Outgoing Staff Architect)",
+      "reviewerId": "user-marcus-3",
+      "reviewerName": "Marcus Vance",
+      "reviewedAt": "2026-10-25T11:20:00Z",
+      "reviewerNotes": "Verified in architecture specification and confirmed in engineering review.",
+      "isAiGenerated": true,
+      "createdAt": "2026-10-24T17:00:00Z",
+      "updatedAt": "2026-10-25T11:20:00Z"
+    },
+    {
+      "id": "fnd-phx-002",
+      "projectId": "proj-phoenix-001",
+      "title": "Conflicting Payment Gateway Directives (Stripe vs Adyen)",
+      "description": "Technical specification specifies Stripe Elements tokenization (already implemented in sandbox), but finance executive memo directed evaluation of Adyen for EU interchange savings, leaving multi-gateway abstraction requirements ambiguous.",
+      "category": "DECISION",
+      "evidenceStatus": "CONFLICTING",
+      "reviewStatus": "NEEDS_CLARIFICATION",
+      "sourceDocumentId": "doc-pay-002",
+      "sourceDocumentName": "Payment_Integration_and_PCI_Scope_Notes.pdf",
+      "pageNumber": 2,
+      "evidenceExcerpt": "In the August committee meeting, the platform team tentatively selected Stripe Elements... However, on September 28, VP of Finance requested evaluation of Adyen due to European interchange rate savings.",
+      "conflictingDetails": "Architecture Doc specifies Stripe SDK integration (Pg 2), whereas Q3 Finance Directive requests Adyen onboarding. No architectural abstraction layer was committed in repo.",
+      "severity": "HIGH",
+      "owner": "Successor (Alex Rivera) / VP Finance",
+      "reviewerId": "user-marcus-3",
+      "reviewerName": "Marcus Vance",
+      "reviewedAt": "2026-10-26T15:40:00Z",
+      "reviewerNotes": "Flagged for incoming lead Alex Rivera to coordinate with Finance before writing payment abstraction wrappers.",
+      "isAiGenerated": true,
+      "createdAt": "2026-10-24T17:01:00Z",
+      "updatedAt": "2026-10-26T15:40:00Z"
+    },
+    {
+      "id": "fnd-phx-003",
+      "projectId": "proj-phoenix-001",
+      "title": "Pending Work: Asynchronous Payment Webhook Idempotency Handler",
+      "description": "Webhook event processing for delayed credit card authorizations, 3D-Secure chargebacks, and refund settlements is not yet idempotent, creating double-fulfillment risk during retries.",
+      "category": "PENDING_TASK",
+      "evidenceStatus": "VERIFIED",
+      "reviewStatus": "APPROVED",
+      "sourceDocumentId": "doc-pay-002",
+      "sourceDocumentName": "Payment_Integration_and_PCI_Scope_Notes.pdf",
+      "pageNumber": 6,
+      "evidenceExcerpt": "Task 1: Complete Webhook idempotency handler for asynchronous payment failure notifications. (PENDING)",
+      "owner": "Alex Rivera (Successor)",
+      "deadline": "2026-11-08",
+      "severity": "HIGH",
+      "reviewerId": "user-demo-1",
+      "reviewerName": "Alex Rivera",
+      "reviewedAt": "2026-10-27T09:10:00Z",
+      "reviewerNotes": "Accepting this finding as primary week 1 priority for incoming engineer.",
+      "isAiGenerated": true,
+      "createdAt": "2026-10-24T17:02:00Z",
+      "updatedAt": "2026-10-27T09:10:00Z"
+    },
+    {
+      "id": "fnd-phx-004",
+      "projectId": "proj-phoenix-001",
+      "title": "Regulatory Risk: PCI-DSS Level 1 Compliance Audit Window",
+      "description": "External PCI-DSS audit scheduled for November 18, 2026. Credit card token vaulting must be fully isolated from application logs and read-replicas, otherwise processing license will be revoked.",
+      "category": "RISK",
+      "evidenceStatus": "VERIFIED",
+      "reviewStatus": "APPROVED",
+      "sourceDocumentId": "doc-pay-002",
+      "sourceDocumentName": "Payment_Integration_and_PCI_Scope_Notes.pdf",
+      "pageNumber": 4,
+      "evidenceExcerpt": "RISK: Annual external PCI-DSS compliance audit commences on November 18, 2026. IMPACT: HIGH / CRITICAL. If token storage vaulting is not fully decoupled from primary database replicas...",
+      "severity": "CRITICAL",
+      "impact": "Complete halt of merchant payment processing storefronts",
+      "owner": "Incoming Lead (Alex Rivera)",
+      "deadline": "2026-11-18",
+      "reviewerId": "user-marcus-3",
+      "reviewerName": "Marcus Vance",
+      "reviewedAt": "2026-10-25T14:00:00Z",
+      "reviewerNotes": "High urgency item. Must be prioritized in handover sign-off.",
+      "isAiGenerated": true,
+      "createdAt": "2026-10-24T17:03:00Z",
+      "updatedAt": "2026-10-25T14:00:00Z"
+    },
+    {
+      "id": "fnd-phx-005",
+      "projectId": "proj-phoenix-001",
+      "title": "Active Blocker: Search Indexer Elasticsearch OOM Leaks",
+      "description": "Catalog diff synchronization worker running against Elasticsearch cluster suffers memory leak causing kernel Out-Of-Memory termination every 72 hours under high indexing loads.",
+      "category": "BLOCKER",
+      "evidenceStatus": "VERIFIED",
+      "reviewStatus": "APPROVED",
+      "sourceDocumentId": "doc-status-003",
+      "sourceDocumentName": "Q3_Migration_Status_and_Risk_Matrix.pdf",
+      "pageNumber": 5,
+      "evidenceExcerpt": "BLOCKER: Search indexing worker memory leak in Elasticsearch cluster causes OOM kills every 72 hours when indexing catalog diffs.",
+      "severity": "HIGH",
+      "owner": "Catalog Squad",
+      "reviewerId": "user-marcus-3",
+      "reviewerName": "Marcus Vance",
+      "reviewedAt": "2026-10-25T14:05:00Z",
+      "isAiGenerated": true,
+      "createdAt": "2026-10-24T17:04:00Z",
+      "updatedAt": "2026-10-25T14:05:00Z"
+    },
+    {
+      "id": "fnd-phx-006",
+      "projectId": "proj-phoenix-001",
+      "title": "Critical Dependency: Central User-Service Auth Token RS256 Verification",
+      "description": "All downstream microservices (Catalog, Cart, Checkout, Order History) depend on user-service JWT public keys for stateless authorization, but latency spikes to p99 > 340ms during session cache misses.",
+      "category": "DEPENDENCY",
+      "evidenceStatus": "VERIFIED",
+      "reviewStatus": "APPROVED",
+      "sourceDocumentId": "doc-arch-001",
+      "sourceDocumentName": "Project_Architecture_Specification_v3.pdf",
+      "pageNumber": 7,
+      "evidenceExcerpt": "DEPENDENCY: Service-to-service authorization depends strictly on the central user-service auth module emitting RS256 signed tokens. BLOCKER: The auth module latency spikes under load...",
+      "severity": "HIGH",
+      "owner": "Identity & Auth Team",
+      "reviewerId": "user-marcus-3",
+      "reviewerName": "Marcus Vance",
+      "reviewedAt": "2026-10-25T14:10:00Z",
+      "isAiGenerated": true,
+      "createdAt": "2026-10-24T17:05:00Z",
+      "updatedAt": "2026-10-25T14:10:00Z"
+    },
+    {
+      "id": "fnd-phx-007",
+      "projectId": "proj-phoenix-001",
+      "title": "Missing Evidence: Disaster Recovery Database Encryption Key Custody",
+      "description": "No documentation identifies who holds the master PGP secret key for decrypting daily database backup archives stored in cold cloud storage. Sarah Lin is believed to be the only key holder.",
+      "category": "UNRESOLVED_QUESTION",
+      "evidenceStatus": "MISSING_EVIDENCE",
+      "reviewStatus": "PENDING",
+      "sourceDocumentId": "doc-status-003",
+      "sourceDocumentName": "Q3_Migration_Status_and_Risk_Matrix.pdf",
+      "pageNumber": 8,
+      "evidenceExcerpt": "QUESTION 1: Who holds the root credentials and PGP key for the encrypted database backup volume in S3/GCS?",
+      "uncertaintyReason": "Report asks the question, but neither the architecture spec nor the security runbook contains the key escrow location or secondary holder list.",
+      "severity": "CRITICAL",
+      "owner": "Sarah Lin / Security Operations",
+      "isAiGenerated": true,
+      "createdAt": "2026-10-24T17:06:00Z",
+      "updatedAt": "2026-10-24T17:06:00Z"
+    },
+    {
+      "id": "fnd-phx-008",
+      "projectId": "proj-phoenix-001",
+      "title": "Uncertain Claim: Legacy Coupon Engine Rules Compatibility",
+      "description": "It is claimed that 100% of legacy promotional tier pricing is supported by the new GraphQL checkout, but documents indicate complex tiered coupon logic may have been discarded.",
+      "category": "UNRESOLVED_QUESTION",
+      "evidenceStatus": "UNCERTAIN",
+      "reviewStatus": "PENDING",
+      "sourceDocumentId": "doc-status-003",
+      "sourceDocumentName": "Q3_Migration_Status_and_Risk_Matrix.pdf",
+      "pageNumber": 8,
+      "evidenceExcerpt": "QUESTION 3: Is the legacy coupon calculation engine documented anywhere, or does the new checkout rewrite simply discard unsupported promotion types?",
+      "uncertaintyReason": "Contradictory comments between PR notes and the migration status report. Requires direct verification with marketing lead.",
+      "severity": "MEDIUM",
+      "owner": "Alex Rivera (Successor)",
+      "isAiGenerated": true,
+      "createdAt": "2026-10-24T17:07:00Z",
+      "updatedAt": "2026-10-24T17:07:00Z"
+    },
+    {
+      "id": "fnd-phx-009",
+      "projectId": "proj-phoenix-001",
+      "title": "Completed Milestone: Multi-Zone GKE Cluster Provisioning",
+      "description": "Production and staging Kubernetes clusters successfully provisioned across 3 availability zones using automated Terraform infrastructure-as-code modules with ArgoCD GitOps pipeline.",
+      "category": "COMPLETED_WORK",
+      "evidenceStatus": "VERIFIED",
+      "reviewStatus": "APPROVED",
+      "sourceDocumentId": "doc-status-003",
+      "sourceDocumentName": "Q3_Migration_Status_and_Risk_Matrix.pdf",
+      "pageNumber": 2,
+      "evidenceExcerpt": "1. GKE multi-zone cluster provisioning with automated Terraform modules (COMPLETED - 100%).",
+      "owner": "DevOps / Sarah Lin",
+      "reviewerId": "user-marcus-3",
+      "reviewerName": "Marcus Vance",
+      "reviewedAt": "2026-10-25T11:00:00Z",
+      "isAiGenerated": true,
+      "createdAt": "2026-10-24T17:08:00Z",
+      "updatedAt": "2026-10-25T11:00:00Z"
+    },
+    {
+      "id": "fnd-phx-010",
+      "projectId": "proj-phoenix-001",
+      "title": "Completed Milestone: Customer Identity & OAuth2 Token Issuance",
+      "description": "Successfully migrated customer sessions from PHP session storage to stateless JWT/OAuth2 token issuance service deployed on Cloud Run with Redis cluster backing.",
+      "category": "COMPLETED_WORK",
+      "evidenceStatus": "VERIFIED",
+      "reviewStatus": "APPROVED",
+      "sourceDocumentId": "doc-status-003",
+      "sourceDocumentName": "Q3_Migration_Status_and_Risk_Matrix.pdf",
+      "pageNumber": 2,
+      "evidenceExcerpt": "2. Customer identity & OAuth2 token issuance service migrated from monolithic sessions (COMPLETED - 100%).",
+      "owner": "Identity Squad",
+      "reviewerId": "user-marcus-3",
+      "reviewerName": "Marcus Vance",
+      "reviewedAt": "2026-10-25T11:05:00Z",
+      "isAiGenerated": true,
+      "createdAt": "2026-10-24T17:09:00Z",
+      "updatedAt": "2026-10-25T11:05:00Z"
+    },
+    {
+      "id": "fnd-gh-1793685958709-1",
+      "projectId": "proj-phoenix-001",
+      "title": "Unmerged PR #142: Redis Sentinel Failover Automations",
+      "description": "Pull request #142 by Sarah Lin is approved by CI but awaiting peer review sign-off before branch merge into main. Contains crucial cluster failover scripts.",
+      "category": "PENDING_TASK",
+      "evidenceStatus": "VERIFIED",
+      "reviewStatus": "PENDING",
+      "sourceDocumentId": "gh-conn-001",
+      "sourceDocumentName": "GitHub: phoenix-retail/storefront-platform-core (PR #142)",
+      "evidenceExcerpt": "PR #142: feat(redis): automated sentinel failover and reconnect backoff strategy. CI Status: Passing (14 tests). Merge state: blocked on code review.",
+      "owner": "Alex Rivera (Successor Reviewer)",
+      "deadline": "2026-11-05",
+      "severity": "HIGH",
+      "isAiGenerated": true,
+      "createdAt": "2026-11-03T06:05:58.709Z",
+      "updatedAt": "2026-11-03T06:05:58.709Z"
+    },
+    {
+      "id": "fnd-gh-1793685958709-2",
+      "projectId": "proj-phoenix-001",
+      "title": "Open Issue #89: Kafka Consumer Group Lag During Rebalance",
+      "description": "Issue reports that during consumer pod restarts in GKE, consumer group lag spikes by 45,000 events before heartbeat recovers.",
+      "category": "BLOCKER",
+      "evidenceStatus": "VERIFIED",
+      "reviewStatus": "PENDING",
+      "sourceDocumentId": "gh-conn-001",
+      "sourceDocumentName": "GitHub: phoenix-retail/storefront-platform-core (Issue #89)",
+      "evidenceExcerpt": "Issue #89 opened by telemetry-bot: consumer-group:order-events lag > 40k items during rolling update in us-east1-b.",
+      "severity": "HIGH",
+      "isAiGenerated": true,
+      "createdAt": "2026-11-03T06:05:58.709Z",
+      "updatedAt": "2026-11-03T06:05:58.709Z"
+    }
+  ],
+  "handoverReports": [
+    {
+      "id": "rpt-1793685868674-8vgr",
+      "projectId": "proj-phoenix-001",
+      "title": "E-Commerce Platform Handover Dossier",
+      "version": "1.0.0",
+      "generatedById": "user-demo-1",
+      "generatedByName": "Alex Rivera",
+      "generatedAt": "2026-11-03T06:04:28.674Z",
+      "projectOverview": "Mission-critical replatforming of legacy monolithic storefront to distributed microservices on Kubernetes, including multi-region database migration and payment gateway overhaul.",
+      "currentStatus": "Project Status: HANDOVER_IN_PROGRESS. Total documents analyzed: 3. Total verified findings: 7 (3 pending review). Outgoing lead: Sarah Lin (Staff Architect). Incoming successor: Alex Rivera (Incoming Senior Engineer).",
+      "completedWork": [
+        {
+          "id": "fnd-phx-009",
+          "projectId": "proj-phoenix-001",
+          "title": "Completed Milestone: Multi-Zone GKE Cluster Provisioning",
+          "description": "Production and staging Kubernetes clusters successfully provisioned across 3 availability zones using automated Terraform infrastructure-as-code modules with ArgoCD GitOps pipeline.",
+          "category": "COMPLETED_WORK",
+          "evidenceStatus": "VERIFIED",
+          "reviewStatus": "APPROVED",
+          "sourceDocumentId": "doc-status-003",
+          "sourceDocumentName": "Q3_Migration_Status_and_Risk_Matrix.pdf",
+          "pageNumber": 2,
+          "evidenceExcerpt": "1. GKE multi-zone cluster provisioning with automated Terraform modules (COMPLETED - 100%).",
+          "owner": "DevOps / Sarah Lin",
+          "reviewerId": "user-marcus-3",
+          "reviewerName": "Marcus Vance",
+          "reviewedAt": "2026-10-25T11:00:00Z",
+          "isAiGenerated": true,
+          "createdAt": "2026-10-24T17:08:00Z",
+          "updatedAt": "2026-10-25T11:00:00Z"
+        },
+        {
+          "id": "fnd-phx-010",
+          "projectId": "proj-phoenix-001",
+          "title": "Completed Milestone: Customer Identity & OAuth2 Token Issuance",
+          "description": "Successfully migrated customer sessions from PHP session storage to stateless JWT/OAuth2 token issuance service deployed on Cloud Run with Redis cluster backing.",
+          "category": "COMPLETED_WORK",
+          "evidenceStatus": "VERIFIED",
+          "reviewStatus": "APPROVED",
+          "sourceDocumentId": "doc-status-003",
+          "sourceDocumentName": "Q3_Migration_Status_and_Risk_Matrix.pdf",
+          "pageNumber": 2,
+          "evidenceExcerpt": "2. Customer identity & OAuth2 token issuance service migrated from monolithic sessions (COMPLETED - 100%).",
+          "owner": "Identity Squad",
+          "reviewerId": "user-marcus-3",
+          "reviewerName": "Marcus Vance",
+          "reviewedAt": "2026-10-25T11:05:00Z",
+          "isAiGenerated": true,
+          "createdAt": "2026-10-24T17:09:00Z",
+          "updatedAt": "2026-10-25T11:05:00Z"
+        }
+      ],
+      "pendingTasks": [
+        {
+          "id": "fnd-phx-003",
+          "projectId": "proj-phoenix-001",
+          "title": "Pending Work: Asynchronous Payment Webhook Idempotency Handler",
+          "description": "Webhook event processing for delayed credit card authorizations, 3D-Secure chargebacks, and refund settlements is not yet idempotent, creating double-fulfillment risk during retries.",
+          "category": "PENDING_TASK",
+          "evidenceStatus": "VERIFIED",
+          "reviewStatus": "APPROVED",
+          "sourceDocumentId": "doc-pay-002",
+          "sourceDocumentName": "Payment_Integration_and_PCI_Scope_Notes.pdf",
+          "pageNumber": 6,
+          "evidenceExcerpt": "Task 1: Complete Webhook idempotency handler for asynchronous payment failure notifications. (PENDING)",
+          "owner": "Alex Rivera (Successor)",
+          "deadline": "2026-11-08",
+          "severity": "HIGH",
+          "reviewerId": "user-demo-1",
+          "reviewerName": "Alex Rivera",
+          "reviewedAt": "2026-10-27T09:10:00Z",
+          "reviewerNotes": "Accepting this finding as primary week 1 priority for incoming engineer.",
+          "isAiGenerated": true,
+          "createdAt": "2026-10-24T17:02:00Z",
+          "updatedAt": "2026-10-27T09:10:00Z"
+        }
+      ],
+      "decisions": [
+        {
+          "id": "fnd-phx-001",
+          "projectId": "proj-phoenix-001",
+          "title": "Database Architecture Decision: PostgreSQL 16 with Citus",
+          "description": "Selected managed PostgreSQL 16 over DynamoDB and MongoDB to ensure strict ACID transactions across distributed order processing and native JSONB catalog facets.",
+          "category": "DECISION",
+          "evidenceStatus": "VERIFIED",
+          "reviewStatus": "APPROVED",
+          "sourceDocumentId": "doc-arch-001",
+          "sourceDocumentName": "Project_Architecture_Specification_v3.pdf",
+          "pageNumber": 3,
+          "evidenceExcerpt": "DECISION: We have chosen PostgreSQL 16 over DynamoDB and MongoDB. RATIONALE: Relational consistency across order line items, strict ACID guarantees during payment transactions...",
+          "rationale": "Relational consistency across line items and ACID guarantees during high-volume flash sales.",
+          "owner": "Sarah Lin (Outgoing Staff Architect)",
+          "reviewerId": "user-marcus-3",
+          "reviewerName": "Marcus Vance",
+          "reviewedAt": "2026-10-25T11:20:00Z",
+          "reviewerNotes": "Verified in architecture specification and confirmed in engineering review.",
+          "isAiGenerated": true,
+          "createdAt": "2026-10-24T17:00:00Z",
+          "updatedAt": "2026-10-25T11:20:00Z"
+        },
+        {
+          "id": "fnd-phx-002",
+          "projectId": "proj-phoenix-001",
+          "title": "Conflicting Payment Gateway Directives (Stripe vs Adyen)",
+          "description": "Technical specification specifies Stripe Elements tokenization (already implemented in sandbox), but finance executive memo directed evaluation of Adyen for EU interchange savings, leaving multi-gateway abstraction requirements ambiguous.",
+          "category": "DECISION",
+          "evidenceStatus": "CONFLICTING",
+          "reviewStatus": "NEEDS_CLARIFICATION",
+          "sourceDocumentId": "doc-pay-002",
+          "sourceDocumentName": "Payment_Integration_and_PCI_Scope_Notes.pdf",
+          "pageNumber": 2,
+          "evidenceExcerpt": "In the August committee meeting, the platform team tentatively selected Stripe Elements... However, on September 28, VP of Finance requested evaluation of Adyen due to European interchange rate savings.",
+          "conflictingDetails": "Architecture Doc specifies Stripe SDK integration (Pg 2), whereas Q3 Finance Directive requests Adyen onboarding. No architectural abstraction layer was committed in repo.",
+          "severity": "HIGH",
+          "owner": "Successor (Alex Rivera) / VP Finance",
+          "reviewerId": "user-marcus-3",
+          "reviewerName": "Marcus Vance",
+          "reviewedAt": "2026-10-26T15:40:00Z",
+          "reviewerNotes": "Flagged for incoming lead Alex Rivera to coordinate with Finance before writing payment abstraction wrappers.",
+          "isAiGenerated": true,
+          "createdAt": "2026-10-24T17:01:00Z",
+          "updatedAt": "2026-10-26T15:40:00Z"
+        }
+      ],
+      "dependencies": [
+        {
+          "id": "fnd-phx-006",
+          "projectId": "proj-phoenix-001",
+          "title": "Critical Dependency: Central User-Service Auth Token RS256 Verification",
+          "description": "All downstream microservices (Catalog, Cart, Checkout, Order History) depend on user-service JWT public keys for stateless authorization, but latency spikes to p99 > 340ms during session cache misses.",
+          "category": "DEPENDENCY",
+          "evidenceStatus": "VERIFIED",
+          "reviewStatus": "APPROVED",
+          "sourceDocumentId": "doc-arch-001",
+          "sourceDocumentName": "Project_Architecture_Specification_v3.pdf",
+          "pageNumber": 7,
+          "evidenceExcerpt": "DEPENDENCY: Service-to-service authorization depends strictly on the central user-service auth module emitting RS256 signed tokens. BLOCKER: The auth module latency spikes under load...",
+          "severity": "HIGH",
+          "owner": "Identity & Auth Team",
+          "reviewerId": "user-marcus-3",
+          "reviewerName": "Marcus Vance",
+          "reviewedAt": "2026-10-25T14:10:00Z",
+          "isAiGenerated": true,
+          "createdAt": "2026-10-24T17:05:00Z",
+          "updatedAt": "2026-10-25T14:10:00Z"
+        }
+      ],
+      "risksAndBlockers": [
+        {
+          "id": "fnd-phx-004",
+          "projectId": "proj-phoenix-001",
+          "title": "Regulatory Risk: PCI-DSS Level 1 Compliance Audit Window",
+          "description": "External PCI-DSS audit scheduled for November 18, 2026. Credit card token vaulting must be fully isolated from application logs and read-replicas, otherwise processing license will be revoked.",
+          "category": "RISK",
+          "evidenceStatus": "VERIFIED",
+          "reviewStatus": "APPROVED",
+          "sourceDocumentId": "doc-pay-002",
+          "sourceDocumentName": "Payment_Integration_and_PCI_Scope_Notes.pdf",
+          "pageNumber": 4,
+          "evidenceExcerpt": "RISK: Annual external PCI-DSS compliance audit commences on November 18, 2026. IMPACT: HIGH / CRITICAL. If token storage vaulting is not fully decoupled from primary database replicas...",
+          "severity": "CRITICAL",
+          "impact": "Complete halt of merchant payment processing storefronts",
+          "owner": "Incoming Lead (Alex Rivera)",
+          "deadline": "2026-11-18",
+          "reviewerId": "user-marcus-3",
+          "reviewerName": "Marcus Vance",
+          "reviewedAt": "2026-10-25T14:00:00Z",
+          "reviewerNotes": "High urgency item. Must be prioritized in handover sign-off.",
+          "isAiGenerated": true,
+          "createdAt": "2026-10-24T17:03:00Z",
+          "updatedAt": "2026-10-25T14:00:00Z"
+        },
+        {
+          "id": "fnd-phx-005",
+          "projectId": "proj-phoenix-001",
+          "title": "Active Blocker: Search Indexer Elasticsearch OOM Leaks",
+          "description": "Catalog diff synchronization worker running against Elasticsearch cluster suffers memory leak causing kernel Out-Of-Memory termination every 72 hours under high indexing loads.",
+          "category": "BLOCKER",
+          "evidenceStatus": "VERIFIED",
+          "reviewStatus": "APPROVED",
+          "sourceDocumentId": "doc-status-003",
+          "sourceDocumentName": "Q3_Migration_Status_and_Risk_Matrix.pdf",
+          "pageNumber": 5,
+          "evidenceExcerpt": "BLOCKER: Search indexing worker memory leak in Elasticsearch cluster causes OOM kills every 72 hours when indexing catalog diffs.",
+          "severity": "HIGH",
+          "owner": "Catalog Squad",
+          "reviewerId": "user-marcus-3",
+          "reviewerName": "Marcus Vance",
+          "reviewedAt": "2026-10-25T14:05:00Z",
+          "isAiGenerated": true,
+          "createdAt": "2026-10-24T17:04:00Z",
+          "updatedAt": "2026-10-25T14:05:00Z"
+        }
+      ],
+      "unresolvedQuestions": [
+        {
+          "id": "fnd-phx-007",
+          "projectId": "proj-phoenix-001",
+          "title": "Missing Evidence: Disaster Recovery Database Encryption Key Custody",
+          "description": "No documentation identifies who holds the master PGP secret key for decrypting daily database backup archives stored in cold cloud storage. Sarah Lin is believed to be the only key holder.",
+          "category": "UNRESOLVED_QUESTION",
+          "evidenceStatus": "MISSING_EVIDENCE",
+          "reviewStatus": "PENDING",
+          "sourceDocumentId": "doc-status-003",
+          "sourceDocumentName": "Q3_Migration_Status_and_Risk_Matrix.pdf",
+          "pageNumber": 8,
+          "evidenceExcerpt": "QUESTION 1: Who holds the root credentials and PGP key for the encrypted database backup volume in S3/GCS?",
+          "uncertaintyReason": "Report asks the question, but neither the architecture spec nor the security runbook contains the key escrow location or secondary holder list.",
+          "severity": "CRITICAL",
+          "owner": "Sarah Lin / Security Operations",
+          "isAiGenerated": true,
+          "createdAt": "2026-10-24T17:06:00Z",
+          "updatedAt": "2026-10-24T17:06:00Z"
+        },
+        {
+          "id": "fnd-phx-008",
+          "projectId": "proj-phoenix-001",
+          "title": "Uncertain Claim: Legacy Coupon Engine Rules Compatibility",
+          "description": "It is claimed that 100% of legacy promotional tier pricing is supported by the new GraphQL checkout, but documents indicate complex tiered coupon logic may have been discarded.",
+          "category": "UNRESOLVED_QUESTION",
+          "evidenceStatus": "UNCERTAIN",
+          "reviewStatus": "PENDING",
+          "sourceDocumentId": "doc-status-003",
+          "sourceDocumentName": "Q3_Migration_Status_and_Risk_Matrix.pdf",
+          "pageNumber": 8,
+          "evidenceExcerpt": "QUESTION 3: Is the legacy coupon calculation engine documented anywhere, or does the new checkout rewrite simply discard unsupported promotion types?",
+          "uncertaintyReason": "Contradictory comments between PR notes and the migration status report. Requires direct verification with marketing lead.",
+          "severity": "MEDIUM",
+          "owner": "Alex Rivera (Successor)",
+          "isAiGenerated": true,
+          "createdAt": "2026-10-24T17:07:00Z",
+          "updatedAt": "2026-10-24T17:07:00Z"
+        }
+      ],
+      "missingAndConflictingInfo": [
+        {
+          "id": "fnd-phx-002",
+          "projectId": "proj-phoenix-001",
+          "title": "Conflicting Payment Gateway Directives (Stripe vs Adyen)",
+          "description": "Technical specification specifies Stripe Elements tokenization (already implemented in sandbox), but finance executive memo directed evaluation of Adyen for EU interchange savings, leaving multi-gateway abstraction requirements ambiguous.",
+          "category": "DECISION",
+          "evidenceStatus": "CONFLICTING",
+          "reviewStatus": "NEEDS_CLARIFICATION",
+          "sourceDocumentId": "doc-pay-002",
+          "sourceDocumentName": "Payment_Integration_and_PCI_Scope_Notes.pdf",
+          "pageNumber": 2,
+          "evidenceExcerpt": "In the August committee meeting, the platform team tentatively selected Stripe Elements... However, on September 28, VP of Finance requested evaluation of Adyen due to European interchange rate savings.",
+          "conflictingDetails": "Architecture Doc specifies Stripe SDK integration (Pg 2), whereas Q3 Finance Directive requests Adyen onboarding. No architectural abstraction layer was committed in repo.",
+          "severity": "HIGH",
+          "owner": "Successor (Alex Rivera) / VP Finance",
+          "reviewerId": "user-marcus-3",
+          "reviewerName": "Marcus Vance",
+          "reviewedAt": "2026-10-26T15:40:00Z",
+          "reviewerNotes": "Flagged for incoming lead Alex Rivera to coordinate with Finance before writing payment abstraction wrappers.",
+          "isAiGenerated": true,
+          "createdAt": "2026-10-24T17:01:00Z",
+          "updatedAt": "2026-10-26T15:40:00Z"
+        },
+        {
+          "id": "fnd-phx-007",
+          "projectId": "proj-phoenix-001",
+          "title": "Missing Evidence: Disaster Recovery Database Encryption Key Custody",
+          "description": "No documentation identifies who holds the master PGP secret key for decrypting daily database backup archives stored in cold cloud storage. Sarah Lin is believed to be the only key holder.",
+          "category": "UNRESOLVED_QUESTION",
+          "evidenceStatus": "MISSING_EVIDENCE",
+          "reviewStatus": "PENDING",
+          "sourceDocumentId": "doc-status-003",
+          "sourceDocumentName": "Q3_Migration_Status_and_Risk_Matrix.pdf",
+          "pageNumber": 8,
+          "evidenceExcerpt": "QUESTION 1: Who holds the root credentials and PGP key for the encrypted database backup volume in S3/GCS?",
+          "uncertaintyReason": "Report asks the question, but neither the architecture spec nor the security runbook contains the key escrow location or secondary holder list.",
+          "severity": "CRITICAL",
+          "owner": "Sarah Lin / Security Operations",
+          "isAiGenerated": true,
+          "createdAt": "2026-10-24T17:06:00Z",
+          "updatedAt": "2026-10-24T17:06:00Z"
+        },
+        {
+          "id": "fnd-phx-008",
+          "projectId": "proj-phoenix-001",
+          "title": "Uncertain Claim: Legacy Coupon Engine Rules Compatibility",
+          "description": "It is claimed that 100% of legacy promotional tier pricing is supported by the new GraphQL checkout, but documents indicate complex tiered coupon logic may have been discarded.",
+          "category": "UNRESOLVED_QUESTION",
+          "evidenceStatus": "UNCERTAIN",
+          "reviewStatus": "PENDING",
+          "sourceDocumentId": "doc-status-003",
+          "sourceDocumentName": "Q3_Migration_Status_and_Risk_Matrix.pdf",
+          "pageNumber": 8,
+          "evidenceExcerpt": "QUESTION 3: Is the legacy coupon calculation engine documented anywhere, or does the new checkout rewrite simply discard unsupported promotion types?",
+          "uncertaintyReason": "Contradictory comments between PR notes and the migration status report. Requires direct verification with marketing lead.",
+          "severity": "MEDIUM",
+          "owner": "Alex Rivera (Successor)",
+          "isAiGenerated": true,
+          "createdAt": "2026-10-24T17:07:00Z",
+          "updatedAt": "2026-10-24T17:07:00Z"
+        }
+      ],
+      "recommendedNextActions": [
+        {
+          "priority": 1,
+          "title": "Review and resolve conflicting payment gateway directive with VP Finance",
+          "description": "Coordinate with Finance to confirm whether Adyen contract will proceed or if Stripe remains sole tokenization provider before Q4 code freeze.",
+          "suggestedOwner": "Alex Rivera (Incoming Senior Engineer)",
+          "deadline": "Within first 5 business days"
+        },
+        {
+          "priority": 2,
+          "title": "Implement Webhook idempotency handler for asynchronous payment events",
+          "description": "Close out pending high-priority task DOC-PAY-002: prevent duplicate order fulfillments on gateway timeout retries.",
+          "suggestedOwner": "Alex Rivera (Incoming Senior Engineer)",
+          "deadline": "2026-11-08"
+        },
+        {
+          "priority": 3,
+          "title": "Verify Master PGP Key Custody for Cold Storage Backups",
+          "description": "Establish dual-custody key escrow with SecOps prior to Sarah Lin departure to prevent disaster recovery lockout.",
+          "suggestedOwner": "SecOps & Successor",
+          "deadline": "2026-11-10"
+        },
+        {
+          "priority": 4,
+          "title": "Pre-Audit PCI-DSS Token Isolation Review",
+          "description": "Confirm that database read replicas and application logs do not persist cardholder data tokens before the external audit on Nov 18.",
+          "suggestedOwner": "Alex Rivera (Incoming Senior Engineer)",
+          "deadline": "2026-11-14"
+        }
+      ],
+      "sourceReferences": [
+        {
+          "documentId": "doc-arch-001",
+          "filename": "Project_Architecture_Specification_v3.pdf",
+          "pagesCovered": "Pages 3, 7",
+          "findingsCount": 2
+        },
+        {
+          "documentId": "doc-pay-002",
+          "filename": "Payment_Integration_and_PCI_Scope_Notes.pdf",
+          "pagesCovered": "Pages 2, 4, 6",
+          "findingsCount": 3
+        },
+        {
+          "documentId": "doc-status-003",
+          "filename": "Q3_Migration_Status_and_Risk_Matrix.pdf",
+          "pagesCovered": "Pages 2, 5, 8",
+          "findingsCount": 5
+        }
+      ]
+    }
+  ],
+  "githubConnections": [
+    {
+      "id": "gh-conn-001",
+      "projectId": "proj-phoenix-001",
+      "repoOwner": "phoenix-retail",
+      "repoName": "storefront-platform-core",
+      "branch": "main",
+      "connectedAt": "2026-09-02T10:00:00Z",
+      "lastSyncedAt": "2026-11-03T06:05:58.707Z",
+      "openIssuesCount": 19,
+      "openPRsCount": 4,
+      "recentCommitsCount": 142,
+      "status": "SYNCED"
+    }
+  ],
+  "activityLogs": [
+    {
+      "id": "act-1793685958710-lur",
+      "timestamp": "2026-11-03T06:05:58.710Z",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "userName": "Alex Rivera",
+      "action": "GitHub Sync Completed",
+      "category": "GITHUB",
+      "details": "Synchronized repository phoenix-retail/storefront-platform-core. Extracted 2 code-level findings."
+    },
+    {
+      "id": "act-1793685868676-pmp",
+      "timestamp": "2026-11-03T06:04:28.676Z",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "userName": "Alex Rivera",
+      "action": "Handover Report Generated",
+      "category": "HANDOVER",
+      "details": "Generated official handover dossier \"E-Commerce Platform Handover Dossier\" with 7 verified findings."
+    },
+    {
+      "id": "act-1793685851849-dk6",
+      "timestamp": "2026-11-03T06:04:11.849Z",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "userName": "Alex Rivera",
+      "action": "Project Intelligence Query",
+      "category": "RAG_QUERY",
+      "details": "Asked: \"What is the recipe for baking chocolate cake?...\" -> Status: NOT_FOUND (0 citations)."
+    },
+    {
+      "id": "act-1793685847963-u20",
+      "timestamp": "2026-11-03T06:04:07.963Z",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "userName": "Alex Rivera",
+      "action": "Project Intelligence Query",
+      "category": "RAG_QUERY",
+      "details": "Asked: \"What are the active blockers for deployment?...\" -> Status: PARTIALLY_VERIFIED (2 citations)."
+    },
+    {
+      "id": "act-1793649219201-jvf",
+      "timestamp": "2026-11-02T19:53:39.201Z",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "userName": "Alex Rivera",
+      "action": "Project Intelligence Query",
+      "category": "RAG_QUERY",
+      "details": "Asked: \"Who is responsible for the database migration?...\" -> Status: CONFLICTING (3 citations)."
+    },
+    {
+      "id": "act-1793649210285-2n4",
+      "timestamp": "2026-11-02T19:53:30.285Z",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "userName": "Alex Rivera",
+      "action": "Project Intelligence Query",
+      "category": "RAG_QUERY",
+      "details": "Asked: \"What is the secret recipe for chocolate cake?...\" -> Status: NOT_FOUND (0 citations)."
+    },
+    {
+      "id": "act-1793649203431-hav",
+      "timestamp": "2026-11-02T19:53:23.431Z",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "userName": "Alex Rivera",
+      "action": "Project Intelligence Query",
+      "category": "RAG_QUERY",
+      "details": "Asked: \"What is blocking the project launch?...\" -> Status: PARTIALLY_VERIFIED (3 citations)."
+    },
+    {
+      "id": "act-1793649082569-o59",
+      "timestamp": "2026-11-02T19:51:22.569Z",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "userName": "Alex Rivera",
+      "action": "Project Intelligence Query",
+      "category": "RAG_QUERY",
+      "details": "Asked: \"What is the secret recipe for chocolate cake?...\" -> Status: NOT_FOUND (0 citations)."
+    },
+    {
+      "id": "act-1793649061170-tdc",
+      "timestamp": "2026-11-02T19:51:01.170Z",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "userName": "Alex Rivera",
+      "action": "Project Intelligence Query",
+      "category": "RAG_QUERY",
+      "details": "Asked: \"What is the secret recipe for chocolate cake?...\" -> Status: NOT_FOUND (0 citations)."
+    },
+    {
+      "id": "act-1793648824064-kwx",
+      "timestamp": "2026-11-02T19:47:04.064Z",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "userName": "Alex Rivera",
+      "action": "Project Intelligence Query",
+      "category": "RAG_QUERY",
+      "details": "Asked: \"What is the secret recipe for chocolate cake?...\" -> Status: CONFLICTING (3 citations)."
+    },
+    {
+      "id": "act-1793648814654-fk4",
+      "timestamp": "2026-11-02T19:46:54.654Z",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "userName": "Alex Rivera",
+      "action": "Project Intelligence Query",
+      "category": "RAG_QUERY",
+      "details": "Asked: \"What is blocking the project launch?...\" -> Status: PARTIALLY_VERIFIED (3 citations)."
+    },
+    {
+      "id": "act-1793648782182-d44",
+      "timestamp": "2026-11-02T19:46:22.182Z",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "userName": "Alex Rivera",
+      "action": "Incremental Synchronisation",
+      "category": "SYNC",
+      "details": "Manual sync completed for GITHUB. 5 records retrieved."
+    },
+    {
+      "id": "act-001",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-sarah-2",
+      "userName": "Sarah Lin",
+      "action": "Project Workspace Initialized",
+      "category": "PROJECT",
+      "details": "Created workspace Phoenix Replatforming Handover with target date Nov 15, 2026.",
+      "timestamp": "2026-09-01T08:00:00Z"
+    },
+    {
+      "id": "act-002",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-sarah-2",
+      "userName": "Sarah Lin",
+      "action": "Uploaded Document",
+      "category": "DOCUMENT",
+      "details": "Uploaded Project_Architecture_Specification_v3.pdf (14 pages).",
+      "timestamp": "2026-09-12T14:22:00Z"
+    },
+    {
+      "id": "act-003",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-sarah-2",
+      "userName": "Sarah Lin",
+      "action": "Uploaded Document",
+      "category": "DOCUMENT",
+      "details": "Uploaded Payment_Integration_and_PCI_Scope_Notes.pdf (8 pages).",
+      "timestamp": "2026-10-02T09:15:00Z"
+    },
+    {
+      "id": "act-004",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-marcus-3",
+      "userName": "Marcus Vance",
+      "action": "AI Knowledge Reconstruction",
+      "category": "AI_EXTRACTION",
+      "details": "Gemini 3.8 Flash extracted 10 structured findings across 3 project documents with exact citations.",
+      "timestamp": "2026-10-24T17:10:00Z"
+    },
+    {
+      "id": "act-005",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-marcus-3",
+      "userName": "Marcus Vance",
+      "action": "Human Finding Review",
+      "category": "REVIEW",
+      "details": "Approved Finding fnd-phx-001 (PostgreSQL Decision) and fnd-phx-004 (PCI-DSS Audit Risk).",
+      "timestamp": "2026-10-25T11:20:00Z"
+    },
+    {
+      "id": "act-006",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "userName": "Alex Rivera",
+      "action": "Human Review Action",
+      "category": "REVIEW",
+      "details": "Approved Finding fnd-phx-003 (Payment Webhook Idempotency) assigned to Alex Rivera.",
+      "timestamp": "2026-10-27T09:10:00Z"
+    }
+  ],
+  "sourceConnections": [
+    {
+      "id": "conn-gh-1",
+      "projectId": "proj-phoenix-001",
+      "service": "GITHUB",
+      "name": "GitHub Repository",
+      "status": "CONNECTED",
+      "accountOrWorkspace": "phoenix-retail",
+      "connectedProject": "ecommerce-core",
+      "lastSyncAt": "2026-11-02T19:46:22.182Z",
+      "nextScheduledSyncAt": "2026-11-02T16:00:00Z",
+      "importedRecordsCount": 5,
+      "failedRecordsCount": 0,
+      "permissionStatus": "AUTHORISED (repo, read:org)",
+      "authConfig": {
+        "repoOwner": "phoenix-retail",
+        "repoName": "ecommerce-core",
+        "branch": "main",
+        "accessTokenMasked": "ghp_••••••••••••••••3x9Z",
+        "webhookActive": true,
+        "scopeSummary": "repo, read:user, read:org"
+      },
+      "syncHistory": [
+        {
+          "id": "sync-gh-1793648782181",
+          "timestamp": "2026-11-02T19:46:22.181Z",
+          "status": "SUCCESS",
+          "recordsImported": 5,
+          "recordsUpdated": 0,
+          "errorsCount": 0,
+          "durationMs": 333,
+          "summary": "Synchronised repository phoenix-retail/ecommerce-core (5 records retrieved)."
+        },
+        {
+          "id": "sync-gh-01",
+          "timestamp": "2026-10-30T12:00:00Z",
+          "status": "SUCCESS",
+          "recordsImported": 28,
+          "recordsUpdated": 3,
+          "errorsCount": 0,
+          "durationMs": 1420,
+          "summary": "Incremental sync completed. 28 commits, PRs, and issues indexed."
+        }
+      ],
+      "createdAt": "2026-10-20T10:00:00Z",
+      "updatedAt": "2026-10-30T12:00:00Z"
+    },
+    {
+      "id": "conn-doc-1",
+      "projectId": "proj-phoenix-001",
+      "service": "DOCUMENT",
+      "name": "Document Connector (PDF, DOCX, XLSX)",
+      "status": "CONNECTED",
+      "accountOrWorkspace": "Local Secure Vault",
+      "connectedProject": "E-Commerce Platform Migration",
+      "lastSyncAt": "2026-10-24T16:43:00Z",
+      "nextScheduledSyncAt": null,
+      "importedRecordsCount": 33,
+      "failedRecordsCount": 0,
+      "permissionStatus": "AUTHORISED (AES-256 encrypted)",
+      "authConfig": {
+        "scopeSummary": "read, write, extract"
+      },
+      "syncHistory": [
+        {
+          "id": "sync-doc-01",
+          "timestamp": "2026-10-24T16:43:00Z",
+          "status": "SUCCESS",
+          "recordsImported": 33,
+          "recordsUpdated": 0,
+          "errorsCount": 0,
+          "durationMs": 820,
+          "summary": "3 document packages parsed with SHA-256 page-level chunking."
+        }
+      ],
+      "createdAt": "2026-09-12T14:22:00Z",
+      "updatedAt": "2026-10-24T16:43:00Z"
+    },
+    {
+      "id": "conn-gdrive-1",
+      "projectId": "proj-phoenix-001",
+      "service": "GOOGLE_DRIVE",
+      "name": "Google Drive Project Folder",
+      "status": "AUTH_REQUIRED",
+      "accountOrWorkspace": "Engineering Shared Drive",
+      "connectedProject": "Handover / Phoenix Replatforming",
+      "lastSyncAt": null,
+      "nextScheduledSyncAt": null,
+      "importedRecordsCount": 0,
+      "failedRecordsCount": 0,
+      "permissionStatus": "OAuth Required (drive.readonly)",
+      "authConfig": {
+        "folderId": "folder_phoenix_docs_2026",
+        "scopeSummary": "https://www.googleapis.com/auth/drive.readonly"
+      },
+      "syncHistory": [],
+      "createdAt": "2026-10-25T09:00:00Z",
+      "updatedAt": "2026-10-25T09:00:00Z"
+    },
+    {
+      "id": "conn-jira-1",
+      "projectId": "proj-phoenix-001",
+      "service": "JIRA",
+      "name": "Atlassian Jira Software",
+      "status": "DISCONNECTED",
+      "accountOrWorkspace": "phoenix.atlassian.net",
+      "connectedProject": "PHX",
+      "lastSyncAt": null,
+      "nextScheduledSyncAt": null,
+      "importedRecordsCount": 0,
+      "failedRecordsCount": 0,
+      "permissionStatus": "Not Connected",
+      "authConfig": {
+        "scopeSummary": "read:jira-work, read:jira-user"
+      },
+      "syncHistory": [],
+      "createdAt": "2026-10-25T09:00:00Z",
+      "updatedAt": "2026-10-25T09:00:00Z"
+    },
+    {
+      "id": "conn-slack-1",
+      "projectId": "proj-phoenix-001",
+      "service": "SLACK",
+      "name": "Slack Continuity Stream",
+      "status": "DISCONNECTED",
+      "accountOrWorkspace": "phoenix-team.slack.com",
+      "connectedProject": "#proj-phoenix-migration",
+      "lastSyncAt": null,
+      "nextScheduledSyncAt": null,
+      "importedRecordsCount": 0,
+      "failedRecordsCount": 0,
+      "permissionStatus": "Not Connected",
+      "authConfig": {
+        "scopeSummary": "channels:history, groups:history"
+      },
+      "syncHistory": [],
+      "createdAt": "2026-10-25T09:00:00Z",
+      "updatedAt": "2026-10-25T09:00:00Z"
+    }
+  ],
+  "sourceRecords": [
+    {
+      "id": "sr-doc-arch-p1",
+      "projectId": "proj-phoenix-001",
+      "sourcePlatform": "DOCUMENT",
+      "externalSourceId": "doc-arch-001#page-1",
+      "sourceUrl": "/api/documents/doc-arch-001?page=1",
+      "recordType": "DOCUMENT_CHUNK",
+      "title": "Project Architecture Specification v3.pdf (Page 1)",
+      "content": "E-COMMERCE PLATFORM MIGRATION SPECIFICATION\nDocument ID: DOC-PHX-ARCH-03\nAuthor: Sarah Lin, Staff Platform Architect\n1. Executive Summary\nThe legacy monolith (PHP/MySQL) is being decommissioned in favor of an event-driven Go and Node.js microservices architecture deployed to Google Kubernetes Engine (GKE). Core data persistence will transition to managed PostgreSQL with Citus distributed sharding.",
+      "author": "Sarah Lin",
+      "createdDate": "2026-09-12T14:22:00Z",
+      "updatedDate": "2026-09-12T14:22:00Z",
+      "retrievedDate": "2026-11-01T08:00:00Z",
+      "lastSynchronisedDate": "2026-11-01T08:00:00Z",
+      "contentHash": "hash-arch-p1",
+      "permissionMetadata": {
+        "isPublic": false,
+        "visibility": "PROJECT_MEMBERS",
+        "requiredRole": "MEMBER"
+      },
+      "version": 1
+    },
+    {
+      "id": "sr-doc-arch-p3",
+      "projectId": "proj-phoenix-001",
+      "sourcePlatform": "DOCUMENT",
+      "externalSourceId": "doc-arch-001#page-3",
+      "sourceUrl": "/api/documents/doc-arch-001?page=3",
+      "recordType": "DOCUMENT_CHUNK",
+      "title": "Project Architecture Specification v3.pdf (Page 3)",
+      "content": "3. Technical Decision Record: Database Migration Strategy\nDECISION: We have chosen PostgreSQL 16 over DynamoDB and MongoDB.\nRATIONALE: Relational consistency across order line items, strict ACID guarantees during payment transactions, and native JSONB capabilities for flexible product catalog facets.\nSTATUS: Migration tooling (Debezium + Kafka CDC pipeline) is completed for 80% of tables. Final cutover scheduled for November 12, 2026.",
+      "author": "Sarah Lin",
+      "createdDate": "2026-09-12T14:22:00Z",
+      "updatedDate": "2026-09-12T14:22:00Z",
+      "retrievedDate": "2026-11-01T08:00:00Z",
+      "lastSynchronisedDate": "2026-11-01T08:00:00Z",
+      "contentHash": "hash-arch-p3",
+      "permissionMetadata": {
+        "isPublic": false,
+        "visibility": "PROJECT_MEMBERS",
+        "requiredRole": "MEMBER"
+      },
+      "version": 1
+    },
+    {
+      "id": "sr-doc-pay-p2",
+      "projectId": "proj-phoenix-001",
+      "sourcePlatform": "DOCUMENT",
+      "externalSourceId": "doc-pay-002#page-2",
+      "sourceUrl": "/api/documents/doc-pay-002?page=2",
+      "recordType": "DOCUMENT_CHUNK",
+      "title": "Payment Integration and PCI Scope Notes.pdf (Page 2)",
+      "content": "PAYMENT INTEGRATION ARCHITECTURE NOTES\nDate: October 2, 2026\nOwner: Sarah Lin\n2. Payment Provider Selection & Conflicting Directive\nIn the August committee meeting, the platform team tentatively selected Stripe Elements for tokenization. However, on September 28, VP of Finance requested evaluation of Adyen due to European interchange rate savings.\nCURRENT STATUS: Stripe sandbox integration is completed; Adyen contract is still pending legal review. Engineering MUST know if the dual-provider abstraction is required before the November freeze.",
+      "author": "Sarah Lin",
+      "createdDate": "2026-10-02T09:15:00Z",
+      "updatedDate": "2026-10-02T09:15:00Z",
+      "retrievedDate": "2026-11-01T08:00:00Z",
+      "lastSynchronisedDate": "2026-11-01T08:00:00Z",
+      "contentHash": "hash-pay-p2",
+      "permissionMetadata": {
+        "isPublic": false,
+        "visibility": "PROJECT_MEMBERS",
+        "requiredRole": "MEMBER"
+      },
+      "version": 1
+    },
+    {
+      "id": "sr-gh-c1",
+      "projectId": "proj-phoenix-001",
+      "sourcePlatform": "GITHUB",
+      "externalSourceId": "a7f39d2e1b4c",
+      "sourceUrl": "https://github.com/phoenix-retail/ecommerce-core/commit/a7f39d2e1b4c",
+      "recordType": "COMMIT",
+      "title": "Commit [a7f39d2]: feat(core): implement idempotent payment callback processor",
+      "content": "Author: Sarah Lin <sarah.lin@phoenix-retail.com>\nDate: 2026-10-24T14:32:10Z\nBranch: main\nCommit SHA: a7f39d2e1b4c\n\nImplements webhook idempotency using Redis SETNX with 24-hour TTL to prevent double charges during gateway retries. Addresses Issue #42.",
+      "author": "Sarah Lin",
+      "createdDate": "2026-10-24T14:32:10Z",
+      "updatedDate": "2026-10-24T14:32:10Z",
+      "retrievedDate": "2026-11-01T08:00:00Z",
+      "lastSynchronisedDate": "2026-11-01T08:00:00Z",
+      "contentHash": "hash-gh-c1",
+      "permissionMetadata": {
+        "isPublic": true,
+        "visibility": "PUBLIC_REPO",
+        "requiredRole": "MEMBER"
+      },
+      "version": 1
+    },
+    {
+      "id": "sr-gh-iss42",
+      "projectId": "proj-phoenix-001",
+      "sourcePlatform": "GITHUB",
+      "externalSourceId": "Issue #42",
+      "sourceUrl": "https://github.com/phoenix-retail/ecommerce-core/issues/42",
+      "recordType": "ISSUE",
+      "title": "Issue #42 [OPEN]: Payment webhook callback signature validation failing under load",
+      "content": "State: open\nAuthor: Sarah Lin\nAssignees: Sarah Lin, Alex Rivera\nLabels: bug, critical, security, payments\nCreated: 2026-10-22T11:00:00Z\nUpdated: 2026-10-29T16:45:00Z\n\nStripe webhook secret rotation caused transient 401 signature mismatches during blue-green deployment. Need to support dual-secret verification during the transition window. Blocks final launch cutover.",
+      "author": "Sarah Lin",
+      "createdDate": "2026-10-22T11:00:00Z",
+      "updatedDate": "2026-10-29T16:45:00Z",
+      "retrievedDate": "2026-11-01T08:00:00Z",
+      "lastSynchronisedDate": "2026-11-01T08:00:00Z",
+      "contentHash": "hash-gh-iss42",
+      "permissionMetadata": {
+        "isPublic": true,
+        "visibility": "PUBLIC_REPO",
+        "requiredRole": "MEMBER"
+      },
+      "version": 1
+    },
+    {
+      "id": "sr-gh-pr18",
+      "projectId": "proj-phoenix-001",
+      "sourcePlatform": "GITHUB",
+      "externalSourceId": "PR #18",
+      "sourceUrl": "https://github.com/phoenix-retail/ecommerce-core/pull/18",
+      "recordType": "PULL_REQUEST",
+      "title": "PR #18 [OPEN]: chore: migrate legacy monolithic session cookies to stateless JWT",
+      "content": "State: open\nAuthor: Sarah Lin\nAssignees: Sarah Lin, Marcus Vance\nBase: main <- Head: feature/stateless-jwt\nCreated: 2026-10-25T13:00:00Z\nUpdated: 2026-10-30T11:20:00Z\nDraft: false\nMerged: Unmerged\n\nReplaces server-side Redis session storage with RS256 signed JWT tokens and HttpOnly refresh cookies. Marcus Vance requested security audit of token expiration times before merge.",
+      "author": "Sarah Lin",
+      "createdDate": "2026-10-25T13:00:00Z",
+      "updatedDate": "2026-10-30T11:20:00Z",
+      "retrievedDate": "2026-11-01T08:00:00Z",
+      "lastSynchronisedDate": "2026-11-01T08:00:00Z",
+      "contentHash": "hash-gh-pr18",
+      "permissionMetadata": {
+        "isPublic": true,
+        "visibility": "PUBLIC_REPO",
+        "requiredRole": "MEMBER"
+      },
+      "version": 1
+    },
+    {
+      "id": "sr-gh-ecommerce-core-c1",
+      "projectId": "proj-phoenix-001",
+      "sourcePlatform": "GITHUB",
+      "externalSourceId": "a7f39d2e1b4c",
+      "sourceUrl": "https://github.com/phoenix-retail/ecommerce-core/commit/a7f39d2e1b4c",
+      "recordType": "COMMIT",
+      "title": "Commit [a7f39d2]: feat(core): implement idempotent payment callback processor",
+      "content": "Author: Sarah Lin <sarah.lin@phoenix-retail.com>\nDate: 2026-10-24T14:32:10Z\nBranch: main\nCommit SHA: a7f39d2e1b4c90123ef456789abcde0123456789\n\nImplements webhook idempotency using Redis SETNX with 24-hour TTL to prevent double charges during gateway retries. Addresses Issue #42.",
+      "author": "Sarah Lin",
+      "createdDate": "2026-10-24T14:32:10Z",
+      "updatedDate": "2026-10-24T14:32:10Z",
+      "retrievedDate": "2026-11-02T19:46:22.181Z",
+      "lastSynchronisedDate": "2026-11-02T19:46:22.181Z",
+      "contentHash": "hash-c1-a7f39d2",
+      "permissionMetadata": {
+        "isPublic": true,
+        "visibility": "PUBLIC_REPO",
+        "requiredRole": "MEMBER"
+      },
+      "version": 1,
+      "metadata": {
+        "sha": "a7f39d2e1b4c90123ef456789abcde0123456789",
+        "shortSha": "a7f39d2"
+      }
+    },
+    {
+      "id": "sr-gh-ecommerce-core-c2",
+      "projectId": "proj-phoenix-001",
+      "sourcePlatform": "GITHUB",
+      "externalSourceId": "b94e82c10a3d",
+      "sourceUrl": "https://github.com/phoenix-retail/ecommerce-core/commit/b94e82c10a3d",
+      "recordType": "COMMIT",
+      "title": "Commit [b94e82c]: fix(db): add foreign key cascade and dead-letter queue index",
+      "content": "Author: Alex Rivera <alex.rivera@phoenix-retail.com>\nDate: 2026-10-27T09:15:00Z\nBranch: main\nCommit SHA: b94e82c10a3de567890123456789abcdef012345\n\nResolves PostgreSQL deadlock under concurrent high-throughput checkout load by indexing tenant_id + order_id on payment_events table.",
+      "author": "Alex Rivera",
+      "createdDate": "2026-10-27T09:15:00Z",
+      "updatedDate": "2026-10-27T09:15:00Z",
+      "retrievedDate": "2026-11-02T19:46:22.181Z",
+      "lastSynchronisedDate": "2026-11-02T19:46:22.181Z",
+      "contentHash": "hash-c2-b94e82c",
+      "permissionMetadata": {
+        "isPublic": true,
+        "visibility": "PUBLIC_REPO",
+        "requiredRole": "MEMBER"
+      },
+      "version": 1,
+      "metadata": {
+        "sha": "b94e82c10a3de567890123456789abcdef012345",
+        "shortSha": "b94e82c"
+      }
+    },
+    {
+      "id": "sr-gh-ecommerce-core-iss42",
+      "projectId": "proj-phoenix-001",
+      "sourcePlatform": "GITHUB",
+      "externalSourceId": "Issue #42",
+      "sourceUrl": "https://github.com/phoenix-retail/ecommerce-core/issues/42",
+      "recordType": "ISSUE",
+      "title": "Issue #42 [OPEN]: Payment webhook callback signature validation failing under load",
+      "content": "State: open\nAuthor: Sarah Lin\nAssignees: Sarah Lin, Alex Rivera\nLabels: bug, critical, security, payments\nCreated: 2026-10-22T11:00:00Z\nUpdated: 2026-10-29T16:45:00Z\n\nStripe webhook secret rotation caused transient 401 signature mismatches during blue-green deployment. Need to support dual-secret verification during the transition window. Blocks final launch cutover.",
+      "author": "Sarah Lin",
+      "createdDate": "2026-10-22T11:00:00Z",
+      "updatedDate": "2026-10-29T16:45:00Z",
+      "retrievedDate": "2026-11-02T19:46:22.181Z",
+      "lastSynchronisedDate": "2026-11-02T19:46:22.181Z",
+      "contentHash": "hash-iss-42",
+      "permissionMetadata": {
+        "isPublic": true,
+        "visibility": "PUBLIC_REPO",
+        "requiredRole": "MEMBER"
+      },
+      "version": 1,
+      "metadata": {
+        "number": 42,
+        "state": "open",
+        "labels": [
+          "bug",
+          "critical",
+          "security",
+          "payments"
+        ]
+      }
+    },
+    {
+      "id": "sr-gh-ecommerce-core-iss47",
+      "projectId": "proj-phoenix-001",
+      "sourcePlatform": "GITHUB",
+      "externalSourceId": "Issue #47",
+      "sourceUrl": "https://github.com/phoenix-retail/ecommerce-core/issues/47",
+      "recordType": "ISSUE",
+      "title": "Issue #47 [CLOSED]: Validate multi-region PostgreSQL replication lag metrics",
+      "content": "State: closed\nAuthor: Alex Rivera\nAssignees: Alex Rivera\nLabels: database, infrastructure, verified\nCreated: 2026-10-18T10:00:00Z\nUpdated: 2026-10-26T17:00:00Z\nClosed At: 2026-10-26T17:00:00Z\n\nValidated replication lag across us-central1 and us-east1 remains below 120ms under 50k QPS simulation. Meets SLA requirement for Phase 2 migration.",
+      "author": "Alex Rivera",
+      "createdDate": "2026-10-18T10:00:00Z",
+      "updatedDate": "2026-10-26T17:00:00Z",
+      "retrievedDate": "2026-11-02T19:46:22.181Z",
+      "lastSynchronisedDate": "2026-11-02T19:46:22.181Z",
+      "contentHash": "hash-iss-47",
+      "permissionMetadata": {
+        "isPublic": true,
+        "visibility": "PUBLIC_REPO",
+        "requiredRole": "MEMBER"
+      },
+      "version": 1,
+      "metadata": {
+        "number": 47,
+        "state": "closed",
+        "labels": [
+          "database",
+          "infrastructure",
+          "verified"
+        ]
+      }
+    },
+    {
+      "id": "sr-gh-ecommerce-core-pr18",
+      "projectId": "proj-phoenix-001",
+      "sourcePlatform": "GITHUB",
+      "externalSourceId": "PR #18",
+      "sourceUrl": "https://github.com/phoenix-retail/ecommerce-core/pull/18",
+      "recordType": "PULL_REQUEST",
+      "title": "PR #18 [OPEN]: chore: migrate legacy monolithic session cookies to stateless JWT",
+      "content": "State: open\nAuthor: Sarah Lin\nAssignees: Sarah Lin, Marcus Vance\nBase: main <- Head: feature/stateless-jwt\nCreated: 2026-10-25T13:00:00Z\nUpdated: 2026-10-30T11:20:00Z\nDraft: false\nMerged: Unmerged\n\nReplaces server-side Redis session storage with RS256 signed JWT tokens and HttpOnly refresh cookies. Marcus Vance requested security audit of token expiration times before merge.",
+      "author": "Sarah Lin",
+      "createdDate": "2026-10-25T13:00:00Z",
+      "updatedDate": "2026-10-30T11:20:00Z",
+      "retrievedDate": "2026-11-02T19:46:22.181Z",
+      "lastSynchronisedDate": "2026-11-02T19:46:22.181Z",
+      "contentHash": "hash-pr-18",
+      "permissionMetadata": {
+        "isPublic": true,
+        "visibility": "PUBLIC_REPO",
+        "requiredRole": "MEMBER"
+      },
+      "version": 1,
+      "metadata": {
+        "number": 18,
+        "state": "open",
+        "draft": false
+      }
+    }
+  ],
+  "ragQueries": [
+    {
+      "id": "rag-q-1793685851848-s52a",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "question": "What is the recipe for baking chocolate cake?",
+      "answer": {
+        "queryId": "rag-1793685851847",
+        "question": "What is the recipe for baking chocolate cake?",
+        "answer": "I could not verify this information from the currently connected project sources.",
+        "verificationStatus": "NOT_FOUND",
+        "confidenceScore": 0,
+        "supportingSources": [],
+        "missingInformation": [
+          "No matching commits, pull requests, issues, or uploaded documents found for the requested keywords in this workspace."
+        ],
+        "latencyMs": 0,
+        "timestamp": "2026-11-03T06:04:11.847Z",
+        "suggestedFollowUps": [
+          "What is the current status of this project?",
+          "What tasks are still pending?",
+          "Who is responsible for the database migration?"
+        ]
+      },
+      "timestamp": "2026-11-03T06:04:11.848Z"
+    },
+    {
+      "id": "rag-q-1793685847962-rssg",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "question": "What are the active blockers for deployment?",
+      "answer": {
+        "queryId": "rag-1793685847962",
+        "question": "What are the active blockers for deployment?",
+        "answer": "Active blockers identified in the connected sources include: Issue #42 [OPEN]: Payment webhook callback signature validation failing under load. As noted in Issue #42, operational dependencies require attention before final launch cutover.",
+        "verificationStatus": "PARTIALLY_VERIFIED",
+        "confidenceScore": 0.88,
+        "supportingSources": [
+          {
+            "id": "sr-gh-iss42",
+            "title": "Issue #42 [OPEN]: Payment webhook callback signature validation failing under load",
+            "platform": "GITHUB",
+            "recordType": "ISSUE",
+            "externalId": "Issue #42",
+            "url": "https://github.com/phoenix-retail/ecommerce-core/issues/42",
+            "excerpt": "State: open\nAuthor: Sarah Lin\nAssignees: Sarah Lin, Alex Rivera\nLabels: bug, critical, security, payments\nCreated: 2026-10-22T11:00:00Z\nUpdated: 2026-10-29T16:45:00Z\n\nStripe webhook secret rotation caused transient 401 signature mismatches ",
+            "author": "Sarah Lin",
+            "lastUpdated": "2026-10-29T16:45:00Z",
+            "retrievedAt": "2026-11-01T08:00:00Z",
+            "freshnessStatus": "FRESH"
+          },
+          {
+            "id": "sr-gh-ecommerce-core-iss42",
+            "title": "Issue #42 [OPEN]: Payment webhook callback signature validation failing under load",
+            "platform": "GITHUB",
+            "recordType": "ISSUE",
+            "externalId": "Issue #42",
+            "url": "https://github.com/phoenix-retail/ecommerce-core/issues/42",
+            "excerpt": "State: open\nAuthor: Sarah Lin\nAssignees: Sarah Lin, Alex Rivera\nLabels: bug, critical, security, payments\nCreated: 2026-10-22T11:00:00Z\nUpdated: 2026-10-29T16:45:00Z\n\nStripe webhook secret rotation caused transient 401 signature mismatches ",
+            "author": "Sarah Lin",
+            "lastUpdated": "2026-10-29T16:45:00Z",
+            "retrievedAt": "2026-11-02T19:46:22.181Z",
+            "freshnessStatus": "FRESH"
+          }
+        ],
+        "missingInformation": [
+          "Some secondary reviewer notes are pending sign-off."
+        ],
+        "latencyMs": 1053,
+        "timestamp": "2026-11-03T06:04:07.962Z",
+        "suggestedFollowUps": [
+          "What are the open pull requests?",
+          "What knowledge will the departing engineer need to transfer?",
+          "Who is assigned to the payment webhook resolution?"
+        ]
+      },
+      "timestamp": "2026-11-03T06:04:07.962Z"
+    },
+    {
+      "id": "rag-q-1793649219200-lwmj",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "question": "Who is responsible for the database migration?",
+      "answer": {
+        "queryId": "rag-1793649219200",
+        "question": "Who is responsible for the database migration?",
+        "answer": "Based on connected repository commits and assigned issues, Sarah Lin is documented as the primary owner for PR #18 [OPEN]: chore: migrate legacy monolithic session cookies to stateless JWT (PR #18). Successor Alex Rivera (Incoming Senior Engineer) is designated to take over primary maintenance upon sign-off.",
+        "verificationStatus": "CONFLICTING",
+        "confidenceScore": 0.88,
+        "supportingSources": [
+          {
+            "id": "sr-gh-pr18",
+            "title": "PR #18 [OPEN]: chore: migrate legacy monolithic session cookies to stateless JWT",
+            "platform": "GITHUB",
+            "recordType": "PULL_REQUEST",
+            "externalId": "PR #18",
+            "url": "https://github.com/phoenix-retail/ecommerce-core/pull/18",
+            "excerpt": "State: open\nAuthor: Sarah Lin\nAssignees: Sarah Lin, Marcus Vance\nBase: main <- Head: feature/stateless-jwt\nCreated: 2026-10-25T13:00:00Z\nUpdated: 2026-10-30T11:20:00Z\nDraft: false\nMerged: Unmerged\n\nReplaces server-side Redis session storage",
+            "author": "Sarah Lin",
+            "lastUpdated": "2026-10-30T11:20:00Z",
+            "retrievedAt": "2026-11-01T08:00:00Z",
+            "freshnessStatus": "FRESH"
+          },
+          {
+            "id": "sr-gh-ecommerce-core-pr18",
+            "title": "PR #18 [OPEN]: chore: migrate legacy monolithic session cookies to stateless JWT",
+            "platform": "GITHUB",
+            "recordType": "PULL_REQUEST",
+            "externalId": "PR #18",
+            "url": "https://github.com/phoenix-retail/ecommerce-core/pull/18",
+            "excerpt": "State: open\nAuthor: Sarah Lin\nAssignees: Sarah Lin, Marcus Vance\nBase: main <- Head: feature/stateless-jwt\nCreated: 2026-10-25T13:00:00Z\nUpdated: 2026-10-30T11:20:00Z\nDraft: false\nMerged: Unmerged\n\nReplaces server-side Redis session storage",
+            "author": "Sarah Lin",
+            "lastUpdated": "2026-10-30T11:20:00Z",
+            "retrievedAt": "2026-11-02T19:46:22.181Z",
+            "freshnessStatus": "FRESH"
+          },
+          {
+            "id": "sr-gh-ecommerce-core-iss47",
+            "title": "Issue #47 [CLOSED]: Validate multi-region PostgreSQL replication lag metrics",
+            "platform": "GITHUB",
+            "recordType": "ISSUE",
+            "externalId": "Issue #47",
+            "url": "https://github.com/phoenix-retail/ecommerce-core/issues/47",
+            "excerpt": "State: closed\nAuthor: Alex Rivera\nAssignees: Alex Rivera\nLabels: database, infrastructure, verified\nCreated: 2026-10-18T10:00:00Z\nUpdated: 2026-10-26T17:00:00Z\nClosed At: 2026-10-26T17:00:00Z\n\nValidated replication lag across us-central1 an",
+            "author": "Alex Rivera",
+            "lastUpdated": "2026-10-26T17:00:00Z",
+            "retrievedAt": "2026-11-02T19:46:22.181Z",
+            "freshnessStatus": "FRESH"
+          }
+        ],
+        "conflictingSources": [
+          {
+            "sourceA": {
+              "title": "Project Architecture Specification v3.pdf (Page 3)",
+              "platform": "DOCUMENT",
+              "excerpt": "3. Technical Decision Record: Database Migration Strategy\nDECISION: We have chosen PostgreSQL 16 over DynamoDB and MongoDB.\nRATIONALE: Relational consistency across order line item",
+              "timestamp": "2026-09-12T14:22:00Z",
+              "url": "/api/documents/doc-arch-001?page=3"
+            },
+            "sourceB": {
+              "title": "Project Architecture Specification v3.pdf (Page 1)",
+              "platform": "DOCUMENT",
+              "excerpt": "E-COMMERCE PLATFORM MIGRATION SPECIFICATION\nDocument ID: DOC-PHX-ARCH-03\nAuthor: Sarah Lin, Staff Platform Architect\n1. Executive Summary\nThe legacy monolith (PHP/MySQL) is being d",
+              "timestamp": "2026-09-12T14:22:00Z",
+              "url": "/api/documents/doc-arch-001?page=1"
+            },
+            "contradiction": "Legacy documents reference MySQL / Oracle monolithic store, while recent architecture specs and PRs confirm migration to Cloud PostgreSQL."
+          }
+        ],
+        "missingInformation": [],
+        "latencyMs": 4503,
+        "timestamp": "2026-11-02T19:53:39.200Z",
+        "suggestedFollowUps": [
+          "What are the open pull requests?",
+          "What knowledge will the departing engineer need to transfer?",
+          "Who is assigned to the payment webhook resolution?"
+        ]
+      },
+      "timestamp": "2026-11-02T19:53:39.200Z"
+    },
+    {
+      "id": "rag-q-1793649210284-yyq4",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "question": "What is the secret recipe for chocolate cake?",
+      "answer": {
+        "queryId": "rag-1793649210284",
+        "question": "What is the secret recipe for chocolate cake?",
+        "answer": "I could not verify this information from the currently connected project sources.",
+        "verificationStatus": "NOT_FOUND",
+        "confidenceScore": 0,
+        "supportingSources": [],
+        "missingInformation": [
+          "No matching commits, pull requests, issues, or uploaded documents found for the requested keywords in this workspace."
+        ],
+        "latencyMs": 1,
+        "timestamp": "2026-11-02T19:53:30.284Z",
+        "suggestedFollowUps": [
+          "What is the current status of this project?",
+          "What tasks are still pending?",
+          "Who is responsible for the database migration?"
+        ]
+      },
+      "timestamp": "2026-11-02T19:53:30.284Z"
+    },
+    {
+      "id": "rag-q-1793649203430-qkk0",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "question": "What is blocking the project launch?",
+      "answer": {
+        "queryId": "rag-1793649203429",
+        "question": "What is blocking the project launch?",
+        "answer": "Active blockers identified in the connected sources include: Issue #42 [OPEN]: Payment webhook callback signature validation failing under load. As noted in Issue #42, operational dependencies require attention before final launch cutover.",
+        "verificationStatus": "PARTIALLY_VERIFIED",
+        "confidenceScore": 0.88,
+        "supportingSources": [
+          {
+            "id": "sr-gh-iss42",
+            "title": "Issue #42 [OPEN]: Payment webhook callback signature validation failing under load",
+            "platform": "GITHUB",
+            "recordType": "ISSUE",
+            "externalId": "Issue #42",
+            "url": "https://github.com/phoenix-retail/ecommerce-core/issues/42",
+            "excerpt": "State: open\nAuthor: Sarah Lin\nAssignees: Sarah Lin, Alex Rivera\nLabels: bug, critical, security, payments\nCreated: 2026-10-22T11:00:00Z\nUpdated: 2026-10-29T16:45:00Z\n\nStripe webhook secret rotation caused transient 401 signature mismatches ",
+            "author": "Sarah Lin",
+            "lastUpdated": "2026-10-29T16:45:00Z",
+            "retrievedAt": "2026-11-01T08:00:00Z",
+            "freshnessStatus": "FRESH"
+          },
+          {
+            "id": "sr-gh-ecommerce-core-iss42",
+            "title": "Issue #42 [OPEN]: Payment webhook callback signature validation failing under load",
+            "platform": "GITHUB",
+            "recordType": "ISSUE",
+            "externalId": "Issue #42",
+            "url": "https://github.com/phoenix-retail/ecommerce-core/issues/42",
+            "excerpt": "State: open\nAuthor: Sarah Lin\nAssignees: Sarah Lin, Alex Rivera\nLabels: bug, critical, security, payments\nCreated: 2026-10-22T11:00:00Z\nUpdated: 2026-10-29T16:45:00Z\n\nStripe webhook secret rotation caused transient 401 signature mismatches ",
+            "author": "Sarah Lin",
+            "lastUpdated": "2026-10-29T16:45:00Z",
+            "retrievedAt": "2026-11-02T19:46:22.181Z",
+            "freshnessStatus": "FRESH"
+          },
+          {
+            "id": "sr-doc-arch-p1",
+            "title": "Project Architecture Specification v3.pdf (Page 1)",
+            "platform": "DOCUMENT",
+            "recordType": "DOCUMENT_CHUNK",
+            "externalId": "doc-arch-001#page-1",
+            "url": "/api/documents/doc-arch-001?page=1",
+            "excerpt": "E-COMMERCE PLATFORM MIGRATION SPECIFICATION\nDocument ID: DOC-PHX-ARCH-03\nAuthor: Sarah Lin, Staff Platform Architect\n1. Executive Summary\nThe legacy monolith (PHP/MySQL) is being decommissioned in favor of an event-driven Go and Node.js mic",
+            "author": "Sarah Lin",
+            "lastUpdated": "2026-09-12T14:22:00Z",
+            "retrievedAt": "2026-11-01T08:00:00Z",
+            "freshnessStatus": "FRESH"
+          }
+        ],
+        "missingInformation": [
+          "Some secondary reviewer notes are pending sign-off."
+        ],
+        "latencyMs": 4502,
+        "timestamp": "2026-11-02T19:53:23.429Z",
+        "suggestedFollowUps": [
+          "What are the open pull requests?",
+          "What knowledge will the departing engineer need to transfer?",
+          "Who is assigned to the payment webhook resolution?"
+        ]
+      },
+      "timestamp": "2026-11-02T19:53:23.430Z"
+    },
+    {
+      "id": "rag-q-1793649082568-omxh",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "question": "What is the secret recipe for chocolate cake?",
+      "answer": {
+        "queryId": "rag-1793649082568",
+        "question": "What is the secret recipe for chocolate cake?",
+        "answer": "I could not verify this information from the currently connected project sources.",
+        "verificationStatus": "NOT_FOUND",
+        "confidenceScore": 0,
+        "supportingSources": [],
+        "missingInformation": [
+          "Recipe or culinary documentation is not part of the project repository."
+        ],
+        "latencyMs": 141159,
+        "timestamp": "2026-11-02T19:51:22.568Z",
+        "suggestedFollowUps": [
+          "Ask about project migration tasks, payment webhook issues, or system architecture."
+        ]
+      },
+      "timestamp": "2026-11-02T19:51:22.568Z"
+    },
+    {
+      "id": "rag-q-1793649061169-s007",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "question": "What is the secret recipe for chocolate cake?",
+      "answer": {
+        "queryId": "rag-1793649061169",
+        "question": "What is the secret recipe for chocolate cake?",
+        "answer": "I could not verify this information from the currently connected project sources.",
+        "verificationStatus": "NOT_FOUND",
+        "confidenceScore": 0,
+        "supportingSources": [],
+        "missingInformation": [
+          "Information regarding a chocolate cake recipe is not present in the project sources."
+        ],
+        "latencyMs": 156319,
+        "timestamp": "2026-11-02T19:51:01.169Z",
+        "suggestedFollowUps": [
+          "Ask about project architectural decisions for PHX-MIG",
+          "Ask about open issues or blockers such as Issue #42"
+        ]
+      },
+      "timestamp": "2026-11-02T19:51:01.169Z"
+    },
+    {
+      "id": "rag-q-1793648824064-zw2f",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "question": "What is the secret recipe for chocolate cake?",
+      "answer": {
+        "queryId": "rag-1793648824064",
+        "question": "What is the secret recipe for chocolate cake?",
+        "answer": "Based on the latest synchronized records from GITHUB: \"Author: Alex Rivera <alex.rivera@phoenix-retail.com>\nDate: 2026-10-27T09:15:00Z\nBranch: main\nCommit SHA: b94e82c10a3de567890123456789abcdef012345\n\nResolves PostgreSQL deadlock under concurrent high-throughput checkout load by indexing tenant_id + order_id on p...\" (Referenced in b94e82c10a3d).",
+        "verificationStatus": "CONFLICTING",
+        "confidenceScore": 0.88,
+        "supportingSources": [
+          {
+            "id": "sr-gh-ecommerce-core-c2",
+            "title": "Commit [b94e82c]: fix(db): add foreign key cascade and dead-letter queue index",
+            "platform": "GITHUB",
+            "recordType": "COMMIT",
+            "externalId": "b94e82c10a3d",
+            "url": "https://github.com/phoenix-retail/ecommerce-core/commit/b94e82c10a3d",
+            "excerpt": "Author: Alex Rivera <alex.rivera@phoenix-retail.com>\nDate: 2026-10-27T09:15:00Z\nBranch: main\nCommit SHA: b94e82c10a3de567890123456789abcdef012345\n\nResolves PostgreSQL deadlock under concurrent high-throughput checkout load by indexing tenan",
+            "author": "Alex Rivera",
+            "lastUpdated": "2026-10-27T09:15:00Z",
+            "retrievedAt": "2026-11-02T19:46:22.181Z",
+            "freshnessStatus": "FRESH"
+          },
+          {
+            "id": "sr-gh-iss42",
+            "title": "Issue #42 [OPEN]: Payment webhook callback signature validation failing under load",
+            "platform": "GITHUB",
+            "recordType": "ISSUE",
+            "externalId": "Issue #42",
+            "url": "https://github.com/phoenix-retail/ecommerce-core/issues/42",
+            "excerpt": "State: open\nAuthor: Sarah Lin\nAssignees: Sarah Lin, Alex Rivera\nLabels: bug, critical, security, payments\nCreated: 2026-10-22T11:00:00Z\nUpdated: 2026-10-29T16:45:00Z\n\nStripe webhook secret rotation caused transient 401 signature mismatches ",
+            "author": "Sarah Lin",
+            "lastUpdated": "2026-10-29T16:45:00Z",
+            "retrievedAt": "2026-11-01T08:00:00Z",
+            "freshnessStatus": "FRESH"
+          },
+          {
+            "id": "sr-gh-ecommerce-core-iss42",
+            "title": "Issue #42 [OPEN]: Payment webhook callback signature validation failing under load",
+            "platform": "GITHUB",
+            "recordType": "ISSUE",
+            "externalId": "Issue #42",
+            "url": "https://github.com/phoenix-retail/ecommerce-core/issues/42",
+            "excerpt": "State: open\nAuthor: Sarah Lin\nAssignees: Sarah Lin, Alex Rivera\nLabels: bug, critical, security, payments\nCreated: 2026-10-22T11:00:00Z\nUpdated: 2026-10-29T16:45:00Z\n\nStripe webhook secret rotation caused transient 401 signature mismatches ",
+            "author": "Sarah Lin",
+            "lastUpdated": "2026-10-29T16:45:00Z",
+            "retrievedAt": "2026-11-02T19:46:22.181Z",
+            "freshnessStatus": "FRESH"
+          }
+        ],
+        "conflictingSources": [
+          {
+            "sourceA": {
+              "title": "Commit [b94e82c]: fix(db): add foreign key cascade and dead-letter queue index",
+              "platform": "GITHUB",
+              "excerpt": "Author: Alex Rivera <alex.rivera@phoenix-retail.com>\nDate: 2026-10-27T09:15:00Z\nBranch: main\nCommit SHA: b94e82c10a3de567890123456789abcdef012345\n\nResolves PostgreSQL deadlock unde",
+              "timestamp": "2026-10-27T09:15:00Z",
+              "url": "https://github.com/phoenix-retail/ecommerce-core/commit/b94e82c10a3d"
+            },
+            "sourceB": {
+              "title": "Project Architecture Specification v3.pdf (Page 1)",
+              "platform": "DOCUMENT",
+              "excerpt": "E-COMMERCE PLATFORM MIGRATION SPECIFICATION\nDocument ID: DOC-PHX-ARCH-03\nAuthor: Sarah Lin, Staff Platform Architect\n1. Executive Summary\nThe legacy monolith (PHP/MySQL) is being d",
+              "timestamp": "2026-09-12T14:22:00Z",
+              "url": "/api/documents/doc-arch-001?page=1"
+            },
+            "contradiction": "Legacy documents reference MySQL / Oracle monolithic store, while recent architecture specs and PRs confirm migration to Cloud PostgreSQL."
+          }
+        ],
+        "missingInformation": [
+          "Some secondary reviewer notes are pending sign-off."
+        ],
+        "latencyMs": 1940,
+        "timestamp": "2026-11-02T19:47:04.064Z",
+        "suggestedFollowUps": [
+          "What are the open pull requests?",
+          "What knowledge will the departing engineer need to transfer?",
+          "Who is assigned to the payment webhook resolution?"
+        ]
+      },
+      "timestamp": "2026-11-02T19:47:04.064Z"
+    },
+    {
+      "id": "rag-q-1793648814653-bi47",
+      "projectId": "proj-phoenix-001",
+      "userId": "user-demo-1",
+      "question": "What is blocking the project launch?",
+      "answer": {
+        "queryId": "rag-1793648814653",
+        "question": "What is blocking the project launch?",
+        "answer": "Active blockers identified in the connected sources include: Project Architecture Specification v3.pdf (Page 1). As noted in doc-arch-001#page-1, operational dependencies require attention before final launch cutover.",
+        "verificationStatus": "PARTIALLY_VERIFIED",
+        "confidenceScore": 0.88,
+        "supportingSources": [
+          {
+            "id": "sr-doc-arch-p1",
+            "title": "Project Architecture Specification v3.pdf (Page 1)",
+            "platform": "DOCUMENT",
+            "recordType": "DOCUMENT_CHUNK",
+            "externalId": "doc-arch-001#page-1",
+            "url": "/api/documents/doc-arch-001?page=1",
+            "excerpt": "E-COMMERCE PLATFORM MIGRATION SPECIFICATION\nDocument ID: DOC-PHX-ARCH-03\nAuthor: Sarah Lin, Staff Platform Architect\n1. Executive Summary\nThe legacy monolith (PHP/MySQL) is being decommissioned in favor of an event-driven Go and Node.js mic",
+            "author": "Sarah Lin",
+            "lastUpdated": "2026-09-12T14:22:00Z",
+            "retrievedAt": "2026-11-01T08:00:00Z",
+            "freshnessStatus": "FRESH"
+          },
+          {
+            "id": "sr-gh-iss42",
+            "title": "Issue #42 [OPEN]: Payment webhook callback signature validation failing under load",
+            "platform": "GITHUB",
+            "recordType": "ISSUE",
+            "externalId": "Issue #42",
+            "url": "https://github.com/phoenix-retail/ecommerce-core/issues/42",
+            "excerpt": "State: open\nAuthor: Sarah Lin\nAssignees: Sarah Lin, Alex Rivera\nLabels: bug, critical, security, payments\nCreated: 2026-10-22T11:00:00Z\nUpdated: 2026-10-29T16:45:00Z\n\nStripe webhook secret rotation caused transient 401 signature mismatches ",
+            "author": "Sarah Lin",
+            "lastUpdated": "2026-10-29T16:45:00Z",
+            "retrievedAt": "2026-11-01T08:00:00Z",
+            "freshnessStatus": "FRESH"
+          },
+          {
+            "id": "sr-gh-ecommerce-core-iss42",
+            "title": "Issue #42 [OPEN]: Payment webhook callback signature validation failing under load",
+            "platform": "GITHUB",
+            "recordType": "ISSUE",
+            "externalId": "Issue #42",
+            "url": "https://github.com/phoenix-retail/ecommerce-core/issues/42",
+            "excerpt": "State: open\nAuthor: Sarah Lin\nAssignees: Sarah Lin, Alex Rivera\nLabels: bug, critical, security, payments\nCreated: 2026-10-22T11:00:00Z\nUpdated: 2026-10-29T16:45:00Z\n\nStripe webhook secret rotation caused transient 401 signature mismatches ",
+            "author": "Sarah Lin",
+            "lastUpdated": "2026-10-29T16:45:00Z",
+            "retrievedAt": "2026-11-02T19:46:22.181Z",
+            "freshnessStatus": "FRESH"
+          }
+        ],
+        "missingInformation": [
+          "Some secondary reviewer notes are pending sign-off."
+        ],
+        "latencyMs": 16687,
+        "timestamp": "2026-11-02T19:46:54.653Z",
+        "suggestedFollowUps": [
+          "What are the open pull requests?",
+          "What knowledge will the departing engineer need to transfer?",
+          "Who is assigned to the payment webhook resolution?"
+        ]
+      },
+      "timestamp": "2026-11-02T19:46:54.653Z"
+    }
+  ]
+}
