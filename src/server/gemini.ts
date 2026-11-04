@@ -7,14 +7,16 @@ import { Finding, FindingCategory, EvidenceStatus } from '../types/index.ts';
 const apiKey = process.env.GEMINI_API_KEY || '';
 export const isGeminiConfigured = () => Boolean(apiKey && apiKey !== 'MY_GEMINI_API_KEY' && apiKey.length > 5);
 
-const ai = new GoogleGenAI({
-  apiKey: apiKey,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
-    },
-  },
-});
+const ai = isGeminiConfigured()
+  ? new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    })
+  : null;
 
 export interface DocumentToAnalyze {
   id: string;
@@ -88,7 +90,7 @@ CRITICAL RULES:
 3. Extract at least 4 to 8 high-impact findings covering decisions, tasks, blockers, risks, and questions.`;
 
   // Check if API key is provided and valid
-  if (isGeminiConfigured()) {
+  if (ai) {
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-3.8-flash',

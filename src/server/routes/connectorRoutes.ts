@@ -2,9 +2,12 @@ import { Router, Request, Response } from 'express';
 import { db } from '../db.ts';
 import { authMiddleware } from '../auth.ts';
 import { syncGitHubRepository } from '../githubConnector.ts';
-import { ConnectorService, SourceConnection, SyncJobRecord } from '../../types/index.ts';
+import { ConnectorService, SourceConnection } from '../../types/index.ts';
+import { projectIdParam, projectWriterRoles, requireProjectAccess } from '../accessControl.ts';
 
 export const connectorRoutes = Router();
+const projectReadAccess = requireProjectAccess(projectIdParam(), undefined);
+const projectManageAccess = requireProjectAccess(projectIdParam(), projectWriterRoles);
 
 const DEFAULT_CONNECTORS_CONFIG: { service: ConnectorService; name: string }[] = [
   { service: 'GITHUB', name: 'GitHub Repositories & Activity' },
@@ -18,66 +21,87 @@ const DEFAULT_CONNECTORS_CONFIG: { service: ConnectorService; name: string }[] =
 ];
 
 // 1. Get all connector statuses for a project
-connectorRoutes.get('/projects/:projectId/connectors', authMiddleware, (req: Request, res: Response) => {
-  const { projectId } = req.params;
-  const project = db.getProjectById(projectId);
-  if (!project) {
-    return res.status(404).json({ error: 'Project not found.' });
+connectorRoutes.get(
+  '/projects/:projectId/connectors',
+  authMiddleware,
+  projectReadAccess,
+  async (req: Request, res: Response) => {
+    const { projectId } = req.params;
+    const project = await db.getProjectById(projectId);
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found.' });
+    }
+
+    const existingConns = await db.getSourceConnections(projectId);
+
+    // Return full grid of all supported connectors with real state
+    const allConnectors = DEFAULT_CONNECTORS_CONFIG.map((cfg) => {
+      const found = existingConns.find((c) => c.service === cfg.service);
+      if (found) return found;
+
+      // Default disconnected card
+      const defaultCard: SourceConnection = {
+        id: `conn-${cfg.service.toLowerCase()}-${projectId}`,
+        projectId,
+        service: cfg.service,
+        name: cfg.name,
+        status: cfg.service === 'DOCUMENT' ? 'CONNECTED' : 'DISCONNECTED',
+        accountOrWorkspace: 'Not Connected',
+        connectedProject: project.name,
+        lastSyncAt: null,
+        nextScheduledSyncAt: null,
+        importedRecordsCount: 0,
+        failedRecordsCount: 0,
+        permissionStatus: 'Unauthorised',
+        authConfig: {},
+        syncHistory: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      return defaultCard;
+    });
+
+    res.json({ connectors: allConnectors });
   }
-
-  const existingConns = db.getSourceConnections(projectId);
-
-  // Return full grid of all supported connectors with real state
-  const allConnectors = DEFAULT_CONNECTORS_CONFIG.map((cfg) => {
-    const found = existingConns.find((c) => c.service === cfg.service);
-    if (found) return found;
-
-    // Default disconnected card
-    const defaultCard: SourceConnection = {
-      id: `conn-${cfg.service.toLowerCase()}-${projectId}`,
-      projectId,
-      service: cfg.service,
-      name: cfg.name,
-      status: cfg.service === 'DOCUMENT' ? 'CONNECTED' : 'DISCONNECTED',
-      accountOrWorkspace: 'Not Connected',
-      connectedProject: project.name,
-      lastSyncAt: null,
-      nextScheduledSyncAt: null,
-      importedRecordsCount: 0,
-      failedRecordsCount: 0,
-      permissionStatus: 'Unauthorised',
-      authConfig: {},
-      syncHistory: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    return defaultCard;
-  });
-
-  res.json({ connectors: allConnectors });
-});
+);
 
 // 2. Connect or update a data source
 connectorRoutes.post(
   '/projects/:projectId/connectors/:service/connect',
   authMiddleware,
+  projectManageAccess,
   async (req: Request, res: Response) => {
     const user = (req as any).user;
     const { projectId, service } = req.params;
-    const { repoOwner, repoName, branch, accessToken, folderId, workspace } = req.body;
+    const { repoOwner, repoName, branch, accessToken, folderId, workspace } = req.body || {};
 
-    const project = db.getProjectById(projectId);
+    const project = await db.getProjectById(projectId);
     if (!project) {
       return res.status(404).json({ error: 'Project not found.' });
     }
 
     const svc = service.toUpperCase() as ConnectorService;
+    if (!DEFAULT_CONNECTORS_CONFIG.some((config) => config.service === svc)) {
+      return res.status(400).json({ error: 'Unsupported connector service.' });
+    }
+    if (svc !== 'GITHUB') {
+      return res.status(501).json({ error: `${svc} authorization is not configured; no connection was created.` });
+    }
+    if (
+      typeof repoOwner !== 'string' ||
+      typeof repoName !== 'string' ||
+      !/^[A-Za-z0-9-]{1,39}$/.test(repoOwner) ||
+      !/^[A-Za-z0-9_.-]{1,100}$/.test(repoName)
+    ) {
+      return res.status(400).json({ error: 'A valid GitHub repository owner and name are required.' });
+    }
+    if (typeof accessToken !== 'string' || accessToken.length < 20 || accessToken.length > 500) {
+      return res.status(400).json({ error: 'A valid GitHub access token is required.' });
+    }
 
     // Build or update SourceConnection record
-    let conn = db.getSourceConnection(projectId, svc);
-    const maskedToken = accessToken
-      ? `${accessToken.substring(0, 4)}••••••••••••${accessToken.slice(-4)}`
-      : conn?.authConfig.accessTokenMasked || 'ghp_••••••••••••3x9Z';
+    let conn = await db.getSourceConnection(projectId, svc);
+    const maskedToken = `${accessToken.substring(0, 4)}••••••••••••${accessToken.slice(-4)}`;
 
     const updatedConn: SourceConnection = {
       id: conn?.id || `conn-${svc.toLowerCase()}-${Date.now()}`,
@@ -85,13 +109,13 @@ connectorRoutes.post(
       service: svc,
       name: DEFAULT_CONNECTORS_CONFIG.find((c) => c.service === svc)?.name || `${svc} Connector`,
       status: 'CONNECTED',
-      accountOrWorkspace: workspace || repoOwner || 'Verified Workspace',
-      connectedProject: repoName || folderId || project.name,
+      accountOrWorkspace: workspace || repoOwner,
+      connectedProject: repoName,
       lastSyncAt: conn?.lastSyncAt || null,
       nextScheduledSyncAt: new Date(Date.now() + 1000 * 60 * 60 * 4).toISOString(),
       importedRecordsCount: conn?.importedRecordsCount || 0,
       failedRecordsCount: 0,
-      permissionStatus: 'AUTHORISED & VERIFIED',
+      permissionStatus: 'VERIFYING',
       authConfig: {
         repoOwner: repoOwner || conn?.authConfig.repoOwner || 'phoenix-retail',
         repoName: repoName || conn?.authConfig.repoName || 'ecommerce-core',
@@ -107,21 +131,21 @@ connectorRoutes.post(
     };
 
     // If GitHub, immediately perform sync
-    if (svc === 'GITHUB') {
+    {
       try {
-        const owner = repoOwner || updatedConn.authConfig.repoOwner || 'phoenix-retail';
-        const repo = repoName || updatedConn.authConfig.repoName || 'ecommerce-core';
-        const br = branch || updatedConn.authConfig.branch || 'main';
-
+        const owner = repoOwner;
+        const repo = repoName;
+        const br = typeof branch === 'string' && /^[A-Za-z0-9._/-]{1,200}$/.test(branch) ? branch : 'main';
         const syncResult = await syncGitHubRepository(projectId, owner, repo, br, accessToken);
-        db.saveSourceRecords(syncResult.sourceRecords);
+        await db.saveSourceRecords(syncResult.sourceRecords);
 
         updatedConn.lastSyncAt = new Date().toISOString();
         updatedConn.importedRecordsCount = syncResult.sourceRecords.length;
         updatedConn.syncHistory.unshift(syncResult.syncJob);
+        updatedConn.permissionStatus = 'AUTHORISED & VERIFIED';
 
         // Also update GitHubConnection for legacy compatibility
-        db.saveGitHubConnection({
+        await db.saveGitHubConnection({
           id: `gh-${projectId}`,
           projectId,
           repoOwner: owner,
@@ -134,14 +158,15 @@ connectorRoutes.post(
           recentCommitsCount: syncResult.sourceRecords.filter((r) => r.recordType === 'COMMIT').length,
           status: 'SYNCED',
         });
-      } catch (err: any) {
-        console.error('GitHub initial sync error:', err.message);
+      } catch (err) {
+        console.error('GitHub initial sync failed:', err instanceof Error ? err.message : 'Unknown GitHub error');
+        return res.status(502).json({ error: 'GitHub authorization or repository verification failed.' });
       }
     }
 
-    db.saveSourceConnection(updatedConn);
+    await db.saveSourceConnection(updatedConn);
 
-    db.logActivity({
+    await db.logActivity({
       projectId,
       userId: user.id,
       userName: user.name,
@@ -150,7 +175,7 @@ connectorRoutes.post(
       details: `Connected ${svc} data source (${updatedConn.accountOrWorkspace}/${updatedConn.connectedProject}).`,
     });
 
-    res.json({ success: true, connection: updatedConn });
+    return res.json({ success: true, connection: updatedConn });
   }
 );
 
@@ -158,18 +183,22 @@ connectorRoutes.post(
 connectorRoutes.post(
   '/projects/:projectId/connectors/:service/disconnect',
   authMiddleware,
-  (req: Request, res: Response) => {
+  projectManageAccess,
+  async (req: Request, res: Response) => {
     const user = (req as any).user;
     const { projectId, service } = req.params;
     const svc = service.toUpperCase() as ConnectorService;
+    if (!DEFAULT_CONNECTORS_CONFIG.some((config) => config.service === svc)) {
+      return res.status(400).json({ error: 'Unsupported connector service.' });
+    }
 
-    const conn = db.getSourceConnection(projectId, svc);
+    const conn = await db.getSourceConnection(projectId, svc);
     if (conn) {
       conn.status = 'DISCONNECTED';
       conn.updatedAt = new Date().toISOString();
-      db.saveSourceConnection(conn);
+      await db.saveSourceConnection(conn);
 
-      db.logActivity({
+      await db.logActivity({
         projectId,
         userId: user.id,
         userName: user.name,
@@ -187,52 +216,35 @@ connectorRoutes.post(
 connectorRoutes.post(
   '/projects/:projectId/connectors/:service/sync',
   authMiddleware,
+  projectManageAccess,
   async (req: Request, res: Response) => {
     const user = (req as any).user;
     const { projectId, service } = req.params;
     const svc = service.toUpperCase() as ConnectorService;
+    if (!DEFAULT_CONNECTORS_CONFIG.some((config) => config.service === svc)) {
+      return res.status(400).json({ error: 'Unsupported connector service.' });
+    }
+    if (svc !== 'GITHUB') {
+      return res.status(501).json({ error: `${svc} synchronization is not configured.` });
+    }
 
-    let conn = db.getSourceConnection(projectId, svc);
+    let conn = await db.getSourceConnection(projectId, svc);
     if (!conn) {
-      const project = db.getProjectById(projectId);
-      const defaultName = DEFAULT_CONNECTORS_CONFIG.find((c) => c.service === svc)?.name || `${svc} Connector`;
-      conn = {
-        id: `conn-${svc.toLowerCase()}-${Date.now()}`,
-        projectId,
-        service: svc,
-        name: defaultName,
-        status: 'CONNECTED',
-        accountOrWorkspace: svc === 'GITHUB' ? 'phoenix-retail' : 'Verified Workspace',
-        connectedProject: svc === 'GITHUB' ? 'ecommerce-core' : (project?.name || 'Main Workspace'),
-        lastSyncAt: null,
-        nextScheduledSyncAt: new Date(Date.now() + 1000 * 60 * 60 * 4).toISOString(),
-        importedRecordsCount: 0,
-        failedRecordsCount: 0,
-        permissionStatus: 'AUTHORISED & VERIFIED',
-        authConfig: {
-          repoOwner: 'phoenix-retail',
-          repoName: 'ecommerce-core',
-          branch: 'main',
-          scopeSummary: 'repo, read:org, read:user',
-        },
-        syncHistory: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      db.saveSourceConnection(conn);
+      return res.status(404).json({ error: 'No GitHub repository is connected to this project.' });
     }
 
     conn.status = 'SYNCING';
-    db.saveSourceConnection(conn);
+    await db.saveSourceConnection(conn);
 
     try {
       if (svc === 'GITHUB') {
-        const owner = conn.authConfig.repoOwner || 'phoenix-retail';
-        const repo = conn.authConfig.repoName || 'ecommerce-core';
+        const owner = conn.authConfig.repoOwner;
+        const repo = conn.authConfig.repoName;
         const branch = conn.authConfig.branch || 'main';
+        if (!owner || !repo) return res.status(409).json({ error: 'GitHub connection is missing repository metadata.' });
 
         const syncResult = await syncGitHubRepository(projectId, owner, repo, branch);
-        db.saveSourceRecords(syncResult.sourceRecords);
+        await db.saveSourceRecords(syncResult.sourceRecords);
 
         conn.status = 'CONNECTED';
         conn.lastSyncAt = new Date().toISOString();
@@ -240,9 +252,9 @@ connectorRoutes.post(
         conn.syncHistory.unshift(syncResult.syncJob);
         if (conn.syncHistory.length > 20) conn.syncHistory = conn.syncHistory.slice(0, 20);
 
-        db.saveSourceConnection(conn);
+        await db.saveSourceConnection(conn);
 
-        db.logActivity({
+        await db.logActivity({
           projectId,
           userId: user.id,
           userName: user.name,
@@ -254,49 +266,37 @@ connectorRoutes.post(
         return res.json({ success: true, connection: conn, syncJob: syncResult.syncJob });
       }
 
-      // Default mock-safe sync for other connectors
-      const mockJob: SyncJobRecord = {
-        id: `sync-${svc.toLowerCase()}-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        status: 'SUCCESS',
-        recordsImported: 12,
-        recordsUpdated: 2,
-        errorsCount: 0,
-        durationMs: 760,
-        summary: `Synchronised ${svc} workspace records successfully.`,
-      };
-
-      conn.status = 'CONNECTED';
-      conn.lastSyncAt = new Date().toISOString();
-      conn.importedRecordsCount = (conn.importedRecordsCount || 0) + 12;
-      conn.syncHistory.unshift(mockJob);
-      db.saveSourceConnection(conn);
-
-      return res.json({ success: true, connection: conn, syncJob: mockJob });
-    } catch (err: any) {
+      return res.status(501).json({ error: `${svc} synchronization is not configured.` });
+    } catch (err) {
       conn.status = 'ERROR';
-      db.saveSourceConnection(conn);
-      res.status(500).json({ error: `Sync failed: ${err.message}` });
+      await db.saveSourceConnection(conn);
+      console.error('Connector sync error:', err instanceof Error ? err.message : 'Unknown connector error');
+      return res.status(502).json({ error: 'Connector synchronization failed.' });
     }
   }
 );
 
 // 5. List Canonical Unified Source Records
-connectorRoutes.get('/projects/:projectId/source-records', authMiddleware, (req: Request, res: Response) => {
-  const { projectId } = req.params;
-  const platform = req.query.platform as string | undefined;
-  const type = req.query.type as string | undefined;
+connectorRoutes.get(
+  '/projects/:projectId/source-records',
+  authMiddleware,
+  projectReadAccess,
+  async (req: Request, res: Response) => {
+    const { projectId } = req.params;
+    const platform = req.query.platform as string | undefined;
+    const type = req.query.type as string | undefined;
 
-  let records = db.getSourceRecords(projectId);
-  if (platform) {
-    records = records.filter((r) => r.sourcePlatform === platform.toUpperCase());
-  }
-  if (type) {
-    records = records.filter((r) => r.recordType === type.toUpperCase());
-  }
+    let records = await db.getSourceRecords(projectId);
+    if (platform) {
+      records = records.filter((r) => r.sourcePlatform === platform.toUpperCase());
+    }
+    if (type) {
+      records = records.filter((r) => r.recordType === type.toUpperCase());
+    }
 
-  res.json({
-    total: records.length,
-    records,
-  });
-});
+    res.json({
+      total: records.length,
+      records,
+    });
+  }
+);

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { useProject } from '../../context/ProjectContext.tsx';
@@ -45,6 +45,22 @@ export const KnowledgeGraph3D: React.FC<Props> = ({ onSelectFinding }) => {
   const [expansionFactor, setExpansionFactor] = useState(1.0);
   const [rotationSpeed, setRotationSpeed] = useState(0.6);
   const [selectedNode, setSelectedNode] = useState<NodeData | null>(null);
+  const [graphUnavailable, setGraphUnavailable] = useState(false);
+  const graphFindings = useMemo(() => {
+    const seen = new Set<string>();
+    return findings.filter((finding) => {
+      const normalize = (value: string | undefined) => (value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+      const identity = [
+        finding.category,
+        normalize(finding.title),
+        finding.sourceDocumentId || finding.sourceRecordId || finding.sourceUrl || '',
+        normalize(finding.evidenceExcerpt),
+      ].join('|');
+      if (seen.has(identity)) return false;
+      seen.add(identity);
+      return true;
+    });
+  }, [findings]);
 
   // References for render loop
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -55,13 +71,20 @@ export const KnowledgeGraph3D: React.FC<Props> = ({ onSelectFinding }) => {
   const animFrameId = useRef<number>(0);
   const isInteracting = useRef(false);
   const previousMousePosition = useRef({ x: 0, y: 0 });
+  const pointerStartPosition = useRef({ x: 0, y: 0 });
+  const activePointerId = useRef<number | null>(null);
   const cameraAngle = useRef({ theta: 0.5, phi: 0.35, radius: 45 });
+  const rotationSpeedRef = useRef(rotationSpeed);
+  const onSelectFindingRef = useRef(onSelectFinding);
+  rotationSpeedRef.current = rotationSpeed;
+  onSelectFindingRef.current = onSelectFinding;
 
   useEffect(() => {
     if (!mountRef.current) return;
     const container = mountRef.current;
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || window.innerHeight;
+    setGraphUnavailable(false);
 
     // 1. Detect software WebGL per Three.js skill
     const isSoftwareGl = (() => {
@@ -84,25 +107,32 @@ export const KnowledgeGraph3D: React.FC<Props> = ({ onSelectFinding }) => {
     cameraRef.current = camera;
     camera.position.set(0, 20, 45);
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: !isSoftwareGl,
-      powerPreference: 'high-performance',
-      alpha: false,
-    });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: !isSoftwareGl,
+        powerPreference: 'high-performance',
+        alpha: false,
+      });
+    } catch (error) {
+      console.error('3D knowledge graph could not initialize WebGL:', error);
+      setGraphUnavailable(true);
+      return;
+    }
     rendererRef.current = renderer;
     renderer.setSize(width, height);
-    renderer.setPixelRatio(isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 1.5));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
-    renderer.shadowMap.enabled = !isSoftwareGl;
-    renderer.shadowMap.type = THREE.PCFShadowMap;
 
     container.replaceChildren(renderer.domElement);
 
     // 3. Studio PBR Environment (RoomEnvironment with PMREMGenerator)
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+    const roomEnvironment = new RoomEnvironment();
+    scene.environment = pmremGenerator.fromScene(roomEnvironment, 0.04).texture;
+    roomEnvironment.dispose();
     pmremGenerator.dispose();
 
     // 4. Lighting Rig
@@ -270,14 +300,15 @@ export const KnowledgeGraph3D: React.FC<Props> = ({ onSelectFinding }) => {
     });
 
     // Populate finding nodes arranged radially
-    findings.forEach((finding, index) => {
-      const angle = (index / findings.length) * Math.PI * 2;
-      const radius = 14 + (index % 3) * 3;
-      const height = Math.sin(index * 1.7) * 5;
+    graphFindings.forEach((finding, index) => {
+      const vertical = 1 - (2 * (index + 0.5)) / graphFindings.length;
+      const ringRadius = Math.sqrt(1 - vertical * vertical);
+      const angle = index * Math.PI * (3 - Math.sqrt(5));
+      const radius = 16 + (index % 4) * 1.5;
 
-      const x = Math.cos(angle) * radius;
-      const y = height;
-      const z = Math.sin(angle) * radius;
+      const x = Math.cos(angle) * ringRadius * radius;
+      const y = vertical * 9 + Math.sin(index * 1.7) * 1.5;
+      const z = Math.sin(angle) * ringRadius * radius;
 
       let color = 0x38bdf8;
       let secondaryColor = 0x0284c7;
@@ -320,6 +351,7 @@ export const KnowledgeGraph3D: React.FC<Props> = ({ onSelectFinding }) => {
     });
 
     nodesRef.current = nodes;
+    setSelectedNode((current) => current ? nodes.find((node) => node.id === current.id) || null : null);
 
     // 7. Interconnecting Data Lines
     const linePositions: number[] = [];
@@ -345,12 +377,16 @@ export const KnowledgeGraph3D: React.FC<Props> = ({ onSelectFinding }) => {
     const mouse = new THREE.Vector2();
 
     const handlePointerDown = (e: PointerEvent) => {
+      if (e.button !== 0) return;
+      activePointerId.current = e.pointerId;
       isInteracting.current = true;
+      pointerStartPosition.current = { x: e.clientX, y: e.clientY };
       previousMousePosition.current = { x: e.clientX, y: e.clientY };
+      container.setPointerCapture(e.pointerId);
     };
 
     const handlePointerMove = (e: PointerEvent) => {
-      if (!isInteracting.current) return;
+      if (!isInteracting.current || activePointerId.current !== e.pointerId) return;
       const deltaX = e.clientX - previousMousePosition.current.x;
       const deltaY = e.clientY - previousMousePosition.current.y;
 
@@ -364,39 +400,48 @@ export const KnowledgeGraph3D: React.FC<Props> = ({ onSelectFinding }) => {
     };
 
     const handlePointerUp = (e: PointerEvent) => {
-      // If minimal drag, treat as click selection
+      if (activePointerId.current !== e.pointerId) return;
       const moved =
-        Math.abs(e.clientX - previousMousePosition.current.x) +
-        Math.abs(e.clientY - previousMousePosition.current.y);
+        Math.abs(e.clientX - pointerStartPosition.current.x) +
+        Math.abs(e.clientY - pointerStartPosition.current.y);
 
       if (moved < 5) {
         const rect = container.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
         mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
         mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
         raycaster.setFromCamera(mouse, camera);
-        const intersectObjects: THREE.Object3D[] = [];
-        nodes.forEach((n) => intersectObjects.push(...n.group.children));
-
-        const intersects = raycaster.intersectObjects(intersectObjects);
+        const intersects = raycaster.intersectObjects(nodes.map((node) => node.group), true);
         if (intersects.length > 0) {
-          const hitObj = intersects[0].object;
-          const matched = nodes.find((n) => n.group.children.includes(hitObj as any));
+          let hitObject: THREE.Object3D | null = intersects[0].object;
+          let matched: NodeData | undefined;
+          while (hitObject && !matched) {
+            matched = nodes.find((node) => node.group === hitObject);
+            hitObject = hitObject.parent;
+          }
           if (matched) {
             setSelectedNode(matched);
             if (matched.rawFinding) {
-              onSelectFinding(matched.rawFinding);
+              onSelectFindingRef.current(matched.rawFinding);
             }
           }
         }
       }
 
       isInteracting.current = false;
+      activePointerId.current = null;
+    };
+    const handlePointerCancel = (e: PointerEvent) => {
+      if (activePointerId.current !== e.pointerId) return;
+      isInteracting.current = false;
+      activePointerId.current = null;
     };
 
     container.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
+    container.addEventListener('pointercancel', handlePointerCancel);
 
     // 9. Damped 60fps Animation Loop
     let lastTime = performance.now();
@@ -407,7 +452,7 @@ export const KnowledgeGraph3D: React.FC<Props> = ({ onSelectFinding }) => {
 
       // Auto-rotation when not manually dragging
       if (!isInteracting.current) {
-        cameraAngle.current.theta += delta * 0.15 * rotationSpeed;
+        cameraAngle.current.theta += delta * 0.15 * rotationSpeedRef.current;
       }
 
       // Smooth camera position with spherical coordinates
@@ -446,9 +491,11 @@ export const KnowledgeGraph3D: React.FC<Props> = ({ onSelectFinding }) => {
       if (!container || !rendererRef.current || !cameraRef.current) return;
       const w = container.clientWidth;
       const h = container.clientHeight;
+      if (w <= 0 || h <= 0) return;
       cameraRef.current.aspect = w / h;
       cameraRef.current.updateProjectionMatrix();
       rendererRef.current.setSize(w, h);
+      rendererRef.current.setPixelRatio(isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 1.5));
     };
 
     window.addEventListener('resize', handleResize);
@@ -458,10 +505,26 @@ export const KnowledgeGraph3D: React.FC<Props> = ({ onSelectFinding }) => {
       container.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
+      container.removeEventListener('pointercancel', handlePointerCancel);
       window.removeEventListener('resize', handleResize);
+      scene.traverse((object) => {
+        const mesh = object as THREE.Mesh;
+        mesh.geometry?.dispose();
+        if (Array.isArray(mesh.material)) mesh.material.forEach((material) => material.dispose());
+        else mesh.material?.dispose();
+      });
+      shadowTex.dispose();
+      if (scene.environment) scene.environment.dispose();
+      renderer.renderLists.dispose();
       renderer.dispose();
+      if (renderer.domElement.parentElement === container) container.removeChild(renderer.domElement);
+      rendererRef.current = null;
+      cameraRef.current = null;
+      sceneRef.current = null;
+      lineMeshRef.current = null;
+      nodesRef.current = [];
     };
-  }, [findings, activeProject]);
+  }, [graphFindings, activeProject]);
 
   // Adjust expansion spacing dynamically
   useEffect(() => {
@@ -481,16 +544,26 @@ export const KnowledgeGraph3D: React.FC<Props> = ({ onSelectFinding }) => {
       node.group.position.copy(expanded);
 
       // Update line connections
-      linePos.setXYZ(idx * 2 + 1, expanded.x, expanded.y, expanded.z);
+      linePos.setXYZ(idx * 2 + 1, isVisible ? expanded.x : 0, isVisible ? expanded.y : 0, isVisible ? expanded.z : 0);
     });
 
     linePos.needsUpdate = true;
-  }, [expansionFactor, filterMode]);
+  }, [expansionFactor, filterMode, graphFindings, activeProject]);
 
   return (
     <div className="relative w-full h-[calc(100vh-65px)] overflow-hidden bg-slate-950">
       {/* 3D WebGL Canvas Container */}
-      <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+      <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing touch-none" />
+      {graphUnavailable && (
+        <div role="status" className="absolute inset-0 flex items-center justify-center bg-slate-950/90 p-8 text-center">
+          <div className="max-w-md rounded-xl border border-slate-800 bg-slate-900 p-6">
+            <h3 className="font-semibold text-white">3D graph is unavailable</h3>
+            <p className="mt-2 text-sm text-slate-400">
+              This browser or device could not start WebGL. Enable hardware acceleration or use a WebGL-capable browser.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Top Left Spec Badge */}
       <div className="absolute top-5 left-6 pointer-events-none select-none">
@@ -502,7 +575,7 @@ export const KnowledgeGraph3D: React.FC<Props> = ({ onSelectFinding }) => {
           {activeProject?.name || 'Project Knowledge Mesh'}
         </h2>
         <p className="text-xs text-slate-400 mt-0.5">
-          {findings.length} Connected Knowledge Entities · Drag to Rotate · Click Node to Inspect
+          {graphFindings.length} Connected Knowledge Entities · Drag to Rotate · Click Node to Inspect
         </p>
       </div>
 
@@ -558,10 +631,10 @@ export const KnowledgeGraph3D: React.FC<Props> = ({ onSelectFinding }) => {
               {/* Segmented Filter Pills */}
               <div className="flex items-center gap-1 p-1 bg-slate-950 border border-slate-800 rounded-lg">
                 {[
-                  { id: 'ALL', label: `All (${findings.length})` },
+                  { id: 'ALL', label: `All (${graphFindings.length})` },
                   { id: 'DECISIONS', label: 'Decisions' },
                   { id: 'RISKS', label: 'Risks & Blockers' },
-                  { id: 'TASKS', label: 'Pending Tasks' },
+                  { id: 'TASKS', label: 'Tasks & Work' },
                 ].map((f) => (
                   <button
                     key={f.id}

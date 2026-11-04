@@ -1,18 +1,25 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db.ts';
 import { authMiddleware } from '../auth.ts';
+import { projectIdParam, requireProjectAccess } from '../accessControl.ts';
 
 export const activityRoutes = Router();
 
 // Project activity logs
-activityRoutes.get('/projects/:projectId/activity', authMiddleware, (req: Request, res: Response) => {
-  const logs = db.getActivityLogs(req.params.projectId);
-  res.json({ logs });
-});
+activityRoutes.get(
+  '/projects/:projectId/activity',
+  authMiddleware,
+  requireProjectAccess(projectIdParam()),
+  async (req: Request, res: Response) => {
+    const logs = await db.getActivityLogs(req.params.projectId);
+    res.json({ logs });
+  }
+);
 
 // Global dashboard metrics and continuity status
-activityRoutes.get('/stats', authMiddleware, (_req: Request, res: Response) => {
-  const projects = db.getProjects();
+activityRoutes.get('/stats', authMiddleware, async (req: Request, res: Response) => {
+  const user = (req as Request & { user: { id: string } }).user;
+  const projects = await db.getProjectsForUser(user.id);
   let totalDocs = 0;
   let totalFindings = 0;
   let totalPending = 0;
@@ -46,11 +53,5 @@ activityRoutes.post('/system/reset-demo', authMiddleware, (req: Request, res: Re
   if (process.env.NODE_ENV === 'production') {
     return res.status(404).json({ error: 'Demo data reset is unavailable in production.' });
   }
-  const user = (req as any).user;
-  if (!['user-demo-1', 'user-sarah-2', 'user-marcus-3'].includes(user.id)) {
-    return res.status(403).json({ error: 'Only demo accounts can reset the demo workspace.' });
-  }
-
-  db.resetToDefaultSeed();
-  res.json({ success: true, message: 'Platform data store re-initialized to official demo seed.' });
+  return res.status(501).json({ error: 'Demo reset is disabled because it would overwrite persisted project data.' });
 });

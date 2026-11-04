@@ -27,6 +27,31 @@ interface Props {
   onInspectFinding: (finding: Finding) => void;
 }
 
+interface OnboardingPlan {
+  successorName: string;
+  readinessScore: number;
+  readinessGaps: string[];
+  phases: {
+    days: '0-30' | '31-60' | '61-90';
+    objective: string;
+    items: {
+      id: string;
+      title: string;
+      description: string;
+      category: string;
+      owner?: string;
+      sourceDocumentName?: string;
+      reviewStatus?: string;
+    }[];
+  }[];
+  ownershipRisks: {
+    title: string;
+    description: string;
+    owner?: string;
+    reviewStatus: string;
+  }[];
+}
+
 export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
   const { activeProject, findings, documents } = useProject();
   const { token, user } = useAuth();
@@ -39,6 +64,9 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
   const [isSigningOff, setIsSigningOff] = useState(false);
   const [signOffSuccess, setSignOffSuccess] = useState(false);
   const [reportError, setReportError] = useState('');
+  const [onboarding, setOnboarding] = useState<OnboardingPlan | null>(null);
+  const [onboardingLoading, setOnboardingLoading] = useState(false);
+  const [onboardingError, setOnboardingError] = useState('');
 
   useEffect(() => {
     async function loadReports() {
@@ -55,6 +83,32 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
       }
     }
     loadReports();
+  }, [activeProject]);
+
+  useEffect(() => {
+    let active = true;
+    async function loadOnboarding() {
+      if (!activeProject) {
+        setOnboarding(null);
+        return;
+      }
+      setOnboardingLoading(true);
+      setOnboardingError('');
+      const result = await safeFetchJson<{ onboarding: OnboardingPlan }>(
+        `/api/projects/${activeProject.id}/onboarding`
+      );
+      if (!active) return;
+      if (result.ok && result.data?.onboarding) {
+        setOnboarding(result.data.onboarding);
+      } else {
+        setOnboardingError(result.error || 'Could not load the successor onboarding plan.');
+      }
+      setOnboardingLoading(false);
+    }
+    void loadOnboarding();
+    return () => {
+      active = false;
+    };
   }, [activeProject]);
 
   const handleGenerateReport = async () => {
@@ -145,7 +199,7 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
       if (download) {
         const link = document.createElement('a');
         link.href = url;
-        link.download = `KNOWBRIDGE_Handover_${activeReport.id}.html`;
+        link.download = `KNOWBRIDGE_Handover_${activeReport.id}.pdf`;
         document.body.append(link);
         link.click();
         link.remove();
@@ -184,7 +238,7 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
                 type="button"
                 onClick={() => void handleReportExport(false)}
                 className="px-3.5 py-2 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors flex items-center gap-2"
-                title="Open formatted dossier for print or PDF export"
+                title="Open the native PDF dossier in a new tab"
               >
                 <Printer className="w-4 h-4 text-sky-400" />
                 <span>Print Dossier</span>
@@ -193,7 +247,7 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
                 type="button"
                 onClick={() => void handleReportExport(true)}
                 className="px-3.5 py-2 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors flex items-center gap-2"
-                title="Download complete standalone HTML report file"
+                title="Download the native PDF handover report"
               >
                 <FileDown className="w-4 h-4 text-emerald-400" />
                 <span>Download Report</span>
@@ -217,6 +271,72 @@ export const HandoverBuilderPage: React.FC<Props> = ({ onInspectFinding }) => {
           {reportError}
         </div>
       )}
+      <section className="rounded-xl border border-sky-900/70 bg-slate-900 p-5 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-widest text-sky-400">Successor Onboarding Assistant</div>
+            <h2 className="mt-1 text-base font-semibold text-white">
+              {onboarding?.successorName || activeProject?.successorName || 'Successor plan'}
+            </h2>
+            <p className="mt-1 text-xs text-slate-400">Evidence-based 30-60-90 day curriculum and ownership gaps.</p>
+          </div>
+          {onboarding && (
+            <div className="text-right">
+              <div className="text-2xl font-bold text-sky-300">{onboarding.readinessScore}%</div>
+              <div className="text-[10px] uppercase tracking-wide text-slate-500">Readiness</div>
+            </div>
+          )}
+        </div>
+        {onboardingLoading && <p className="text-xs text-slate-400">Preparing onboarding plan…</p>}
+        {onboardingError && <p role="alert" className="text-xs text-rose-300">{onboardingError}</p>}
+        {onboarding && (
+          <>
+            {onboarding.readinessGaps.length > 0 && (
+              <div className="rounded-lg border border-amber-900/70 bg-amber-950/20 p-3">
+                <h3 className="text-xs font-semibold text-amber-200">Readiness gaps to resolve</h3>
+                <ul className="mt-2 list-disc space-y-1 pl-4 text-[11px] text-amber-100/80">
+                  {onboarding.readinessGaps.map((gap) => <li key={gap}>{gap}</li>)}
+                </ul>
+              </div>
+            )}
+            {onboarding.ownershipRisks.length > 0 && (
+              <div className="rounded-lg border border-rose-900/60 bg-rose-950/20 p-3">
+                <h3 className="text-xs font-semibold text-rose-200">High-impact ownership check</h3>
+                <ul className="mt-2 space-y-2 text-[11px] text-rose-100/80">
+                  {onboarding.ownershipRisks.map((risk, index) => (
+                    <li key={`${risk.title}-${index}`}>
+                      <strong>{risk.title}</strong> — {risk.description} ({risk.reviewStatus})
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="grid gap-3 lg:grid-cols-3">
+              {onboarding.phases.map((phase) => (
+                <div key={phase.days} className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
+                  <h3 className="text-xs font-semibold text-slate-100">Days {phase.days}</h3>
+                  <p className="mt-1 text-[11px] text-slate-400">{phase.objective}</p>
+                  {phase.items.length === 0 ? (
+                    <p className="mt-3 text-[11px] italic text-slate-500">No source-backed actions in this phase yet.</p>
+                  ) : (
+                    <ul className="mt-3 space-y-2">
+                      {phase.items.map((item) => (
+                        <li key={item.id} className="border-t border-slate-800 pt-2">
+                          <div className="text-[11px] font-medium text-sky-200">{item.title}</div>
+                          <div className="mt-0.5 line-clamp-3 text-[10px] text-slate-400">{item.description}</div>
+                          <div className="mt-1 text-[9px] text-slate-500">
+                            {item.owner ? `Owner: ${item.owner} · ` : ''}{item.reviewStatus || item.category}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </section>
       <div className="p-5 bg-slate-900 border border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">

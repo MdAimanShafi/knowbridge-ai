@@ -45,41 +45,29 @@ export async function syncGitHubRepository(
   const baseUrl = `https://api.github.com/repos/${cleanOwner}/${cleanRepo}`;
 
   const sourceRecords: SourceRecord[] = [];
-  let repoInfo: GitHubRepoInfo = {
-    name: cleanRepo,
-    fullName: `${cleanOwner}/${cleanRepo}`,
-    description: 'Enterprise project code repository for continuity & knowledge tracking.',
-    defaultBranch: branch || 'main',
-    stars: 142,
-    openIssuesCount: 4,
-    updatedAt: new Date().toISOString(),
-    pushedAt: new Date().toISOString(),
-    isPrivate: false,
-  };
-
-  let usedLiveApi = false;
+  let repoInfo: GitHubRepoInfo;
 
   try {
     // 1. Fetch Repository Metadata
     const repoRes = await fetch(baseUrl, { headers });
-    if (repoRes.ok) {
-      usedLiveApi = true;
-      const data: any = await repoRes.json();
-      repoInfo = {
-        name: data.name,
-        fullName: data.full_name,
-        description: data.description || 'Enterprise project repository',
-        defaultBranch: data.default_branch || branch,
-        stars: data.stargazers_count || 0,
-        openIssuesCount: data.open_issues_count || 0,
-        updatedAt: data.updated_at,
-        pushedAt: data.pushed_at,
-        isPrivate: data.private || false,
-      };
+    if (!repoRes.ok) throw new Error(`Repository metadata request failed (${repoRes.status}).`);
+    const data: any = await repoRes.json();
+    repoInfo = {
+      name: data.name,
+      fullName: data.full_name,
+      description: data.description || '',
+      defaultBranch: data.default_branch || branch,
+      stars: data.stargazers_count || 0,
+      openIssuesCount: data.open_issues_count || 0,
+      updatedAt: data.updated_at,
+      pushedAt: data.pushed_at,
+      isPrivate: data.private || false,
+    };
 
-      // 2. Fetch Commits (last 25)
-      const commitsRes = await fetch(`${baseUrl}/commits?sha=${repoInfo.defaultBranch}&per_page=25`, { headers });
-      if (commitsRes.ok) {
+    // 2. Fetch Commits (last 25)
+    const commitsRes = await fetch(`${baseUrl}/commits?sha=${encodeURIComponent(repoInfo.defaultBranch)}&per_page=25`, { headers });
+    if (!commitsRes.ok) throw new Error(`Commit request failed (${commitsRes.status}).`);
+    {
         const commits: any[] = await commitsRes.json();
         commits.forEach((c) => {
           const sha = c.sha.substring(0, 7);
@@ -116,11 +104,12 @@ export async function syncGitHubRepository(
             },
           });
         });
-      }
+    }
 
-      // 3. Fetch Pull Requests (last 20)
-      const prsRes = await fetch(`${baseUrl}/pulls?state=all&per_page=20`, { headers });
-      if (prsRes.ok) {
+    // 3. Fetch Pull Requests (last 20)
+    const prsRes = await fetch(`${baseUrl}/pulls?state=all&per_page=20`, { headers });
+    if (!prsRes.ok) throw new Error(`Pull request request failed (${prsRes.status}).`);
+    {
         const prs: any[] = await prsRes.json();
         prs.forEach((pr) => {
           const author = pr.user?.login || 'Developer';
@@ -154,11 +143,12 @@ export async function syncGitHubRepository(
             },
           });
         });
-      }
+    }
 
-      // 4. Fetch Issues (last 20, filtering out PRs which GitHub includes in issues API)
-      const issuesRes = await fetch(`${baseUrl}/issues?state=all&per_page=20`, { headers });
-      if (issuesRes.ok) {
+    // 4. Fetch Issues (last 20, filtering out PRs which GitHub includes in issues API)
+    const issuesRes = await fetch(`${baseUrl}/issues?state=all&per_page=20`, { headers });
+    if (!issuesRes.ok) throw new Error(`Issue request failed (${issuesRes.status}).`);
+    {
         const issues: any[] = await issuesRes.json();
         issues
           .filter((iss) => !iss.pull_request)
@@ -197,16 +187,12 @@ export async function syncGitHubRepository(
               },
             });
           });
-      }
     }
-  } catch (err: any) {
-    console.warn(`GitHub API request to ${cleanOwner}/${cleanRepo} failed (${err.message}). Using synthetic verified project repository data.`);
-  }
-
-  // If live GitHub request was rate-limited or unavailable, supply authentic grounded records for the repository
-  if (!usedLiveApi || sourceRecords.length === 0) {
-    const syntheticRecords = generateAuthenticGitHubRecords(projectId, cleanOwner, cleanRepo, branch);
-    sourceRecords.push(...syntheticRecords);
+  } catch (err) {
+    throw new Error(
+      `GitHub sync failed: ${err instanceof Error ? err.message : 'Unknown GitHub API error'}`,
+      { cause: err }
+    );
   }
 
   const durationMs = Date.now() - startTime;

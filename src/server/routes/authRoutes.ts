@@ -6,8 +6,8 @@ import { generateToken, authMiddleware } from '../auth.ts';
 export const authRoutes = Router();
 
 // Register new user
-authRoutes.post('/register', (req: Request, res: Response) => {
-  const { email, name, title, password } = req.body;
+authRoutes.post('/register', async (req: Request, res: Response) => {
+  const { email, name, title, password } = req.body || {};
   const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
   const normalizedName = typeof name === 'string' ? name.trim() : '';
 
@@ -25,12 +25,12 @@ authRoutes.post('/register', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Password must be between 8 and 128 characters.' });
   }
 
-  const existing = db.findUserByEmail(normalizedEmail);
+  const existing = await db.findUserByEmail(normalizedEmail);
   if (existing) {
     return res.status(409).json({ error: 'An account with this email already exists.' });
   }
 
-  const user = db.createUser({
+  const user = await db.createUser({
     email: normalizedEmail,
     name: normalizedName,
     title: typeof title === 'string' && title.trim() ? title.trim().slice(0, 100) : 'Project Member',
@@ -40,7 +40,7 @@ authRoutes.post('/register', (req: Request, res: Response) => {
 
   const token = generateToken(user);
 
-  db.logActivity({
+  await db.logActivity({
     projectId: 'global',
     userId: user.id,
     userName: user.name,
@@ -53,15 +53,15 @@ authRoutes.post('/register', (req: Request, res: Response) => {
 });
 
 // Standard Login
-authRoutes.post('/login', (req: Request, res: Response) => {
-  const { email, password } = req.body;
+authRoutes.post('/login', async (req: Request, res: Response) => {
+  const { email, password } = req.body || {};
   const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
 
   if (!normalizedEmail || typeof password !== 'string' || !password || password.length > 128) {
     return res.status(400).json({ error: 'Email and password are required.' });
   }
 
-  const userWithHash = db.findUserByEmail(normalizedEmail);
+  const userWithHash = await db.findUserByEmail(normalizedEmail);
   if (!userWithHash) {
     return res.status(401).json({ error: 'Invalid email or password.' });
   }
@@ -74,7 +74,7 @@ authRoutes.post('/login', (req: Request, res: Response) => {
   const { passwordHash: _, ...safeUser } = userWithHash;
   const token = generateToken(safeUser);
 
-  db.logActivity({
+  await db.logActivity({
     projectId: 'global',
     userId: safeUser.id,
     userName: safeUser.name,
@@ -87,7 +87,7 @@ authRoutes.post('/login', (req: Request, res: Response) => {
 });
 
 // Demo Instant Login for Judges
-authRoutes.post('/demo-login', (req: Request, res: Response) => {
+authRoutes.post('/demo-login', async (req: Request, res: Response) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(404).json({ error: 'Demo sign-in is unavailable in production.' });
   }
@@ -101,7 +101,7 @@ authRoutes.post('/demo-login', (req: Request, res: Response) => {
   const targetEmail =
     role === 'sarah' ? demoUsers.sarah : role === 'marcus' ? demoUsers.marcus : demoUsers.alex;
 
-  const userWithHash = db.findUserByEmail(targetEmail);
+  const userWithHash = await db.findUserByEmail(targetEmail);
   if (!userWithHash) {
     return res.status(404).json({ error: 'Demo user account not found.' });
   }
@@ -109,7 +109,7 @@ authRoutes.post('/demo-login', (req: Request, res: Response) => {
   const { passwordHash: _, ...safeUser } = userWithHash;
   const token = generateToken(safeUser);
 
-  db.logActivity({
+  await db.logActivity({
     projectId: 'global',
     userId: safeUser.id,
     userName: safeUser.name,
@@ -122,9 +122,9 @@ authRoutes.post('/demo-login', (req: Request, res: Response) => {
 });
 
 // Get Current User Profile
-authRoutes.get('/me', authMiddleware, (req: Request, res: Response) => {
+authRoutes.get('/me', authMiddleware, async (req: Request, res: Response) => {
   const authed = (req as any).user;
-  const user = db.findUserById(authed.id);
+  const user = await db.findUserById(authed.id);
   if (!user) {
     return res.status(404).json({ error: 'User profile not found.' });
   }

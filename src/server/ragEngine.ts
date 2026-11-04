@@ -13,14 +13,17 @@ import {
 } from '../types/index.ts';
 
 const apiKey = process.env.GEMINI_API_KEY || '';
-const ai = new GoogleGenAI({
-  apiKey,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build-rag',
-    },
-  },
-});
+const ai =
+  apiKey && apiKey !== 'MY_GEMINI_API_KEY' && apiKey.length > 5
+    ? new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build-rag',
+          },
+        },
+      })
+    : null;
 
 interface ScoredRecord {
   record: SourceRecord;
@@ -255,7 +258,7 @@ ANTI-HALLUCINATION INVARIANTS:
 6. Return valid JSON adhering to the specified schema.`;
 
   // 4. Query Gemini 3.8 Flash
-  if (apiKey && apiKey !== 'MY_GEMINI_API_KEY' && apiKey.length > 5) {
+  if (ai) {
     try {
       const geminiCall = ai.models.generateContent({
         model: 'gemini-3.8-flash',

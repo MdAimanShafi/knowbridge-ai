@@ -98,9 +98,13 @@ npm start
 GEMINI_API_KEY=your-gemini-api-key
 PORT=3000
 JWT_SECRET=replace-with-a-random-secret-at-least-32-characters-long
+CORS_ORIGINS=https://your-production-app.example
 ```
 
 `GEMINI_API_KEY` is optional for local development. When it is not configured, document analysis uses a grounded rule-based fallback; the app reports which provider produced the findings. In production, set `JWT_SECRET` to a random value of at least 32 characters. The development-only default is not suitable for deployment.
+In production, set `CORS_ORIGINS` to a comma-separated allowlist of trusted frontend origins. Requests without an `Origin` header remain available for server-to-server use; browser origins not on the allowlist are rejected.
+
+Project API access requires project membership. Project roles are `OWNER`, `ADMIN`, `MANAGER` (the legacy `LEAD` role maps to `MANAGER`), `MEMBER`, and `REVIEWER`. Owners, admins, and managers can update project settings and manage integrations; members can contribute documents; owners, admins, managers, and reviewers can review findings and manage handover reports. Uploaded documents are held in memory during processing and stored in the private project data store, never served from a public file directory.
 
 ### Using the application
 
